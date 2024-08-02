@@ -226,6 +226,6 @@ fun LoginActivityContent() {
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
+fun LoginPagePreview() {
     LoginActivityContent()
 }
