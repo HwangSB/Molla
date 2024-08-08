@@ -17,23 +17,20 @@
             android:theme="@style/Theme.Molla">
 
         </activity>
+<!--        <activity-->
+<!--            android:name=".MainActivity"-->
+<!--            android:theme="@style/Theme.Molla">-->
+
+<!--        </activity>-->
         <activity
-            android:name=".MainActivity"
+            android:name=".PostDetailActivity"
             android:exported="true"
             android:theme="@style/Theme.Molla">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".CounselActivity"
-            android:theme="@style/Theme.Molla">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
 
-        </activity>
-        <activity
-            android:name=".AnalysisActivity"
-            android:theme="@style/Theme.Molla">
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
         </activity>
 
     </application>
