@@ -17,13 +17,13 @@
             android:theme="@style/Theme.Molla">
 
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:theme="@style/Theme.Molla">
+<!--        <activity-->
+<!--            android:name=".MainActivity"-->
+<!--            android:theme="@style/Theme.Molla">-->
 
-        </activity>
+<!--        </activity>-->
         <activity
-            android:name=".CounselActivity"
+            android:name=".PostDetailActivity"
             android:exported="true"
             android:theme="@style/Theme.Molla">
         <intent-filter>
