@@ -55,13 +55,12 @@ fun CounselActivityContent() {
     val listState = rememberLazyListState()
     val chatMessageList = remember {
         mutableStateListOf(
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 등산은 잘 갔다 오셨나요?", false),
-            ChatMessageUiModel("짧은글", true),
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false),
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false),
-            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true),
-            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true),
-        )
+            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 등산은 잘 갔다 오셨나요?", false, writer = "AI 상담사"),
+            ChatMessageUiModel("짧은글", true, writer = "사용자"),
+            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
+            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
+            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자"),
+            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자"))
     }
 
     MollaTheme {
@@ -104,7 +103,6 @@ fun CounselActivityContent() {
                     ) {
                         chatMessage -> ChatBubble(chatMessage = chatMessage)
                     }
-
                 }
                 // 스크롤 상태에서 채팅 입력시 자동으로 하단 이동
                 LaunchedEffect(chatMessageList.size) {
@@ -126,7 +124,7 @@ fun CounselActivityContent() {
                     onSendMessage = {
                         if (userInput.isNotEmpty()) {
                             // TODO : 서버로 채팅 입력 내용 전송
-                            chatMessageList.add(ChatMessageUiModel(userInput, true))
+                            chatMessageList.add(ChatMessageUiModel(userInput, true, writer = "사용자"))
                             userInput = ""
 
                             // TODO : 서버로 받은 응답 값(AI 상담사의 답변) 또한 리스트에 추가
@@ -137,89 +135,6 @@ fun CounselActivityContent() {
         }
     }
 }
-
-@Composable
-fun ChatBubble(
-    modifier: Modifier = Modifier,
-    chatMessage: ChatMessageUiModel,
-) {
-    val messageArrangement = if (chatMessage.isUser) Arrangement.End else Arrangement.Start
-    val who = if (chatMessage.isUser) "사용자" else "AI 상담사"
-
-    Row(
-        modifier = modifier
-            .padding(8.dp)
-            .wrapContentHeight()
-            .fillMaxSize(),
-        horizontalArrangement = messageArrangement,
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        if (chatMessage.isUser) {
-            Spacer(modifier = modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = who,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                MessageBox(
-                    message = chatMessage.message,
-                    isUser = true,
-                )
-            }
-        } else {
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    text = who,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                MessageBox(
-                    message = chatMessage.message,
-                    isUser = false,
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-    }
-}
-
-@Composable
-fun MessageBox(
-    modifier: Modifier = Modifier,
-    message: String,
-    isUser: Boolean,
-) {
-
-    val maxWidthDp = LocalConfiguration.current.screenWidthDp.dp * 2 / 3
-
-    Box (
-        modifier = modifier
-            .widthIn(max = maxWidthDp)
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(8.dp))
-            .background(
-                if (isUser) Color(0xFFE3F2FD) else MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(8.dp)
-            )
-            .padding(8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            modifier = Modifier.padding(all = 4.dp),
-        )
-    }
-}
-
-data class ChatMessageUiModel (
-    val message: String,
-    val isUser: Boolean,
-)
 
 @Preview(showBackground = true)
 @Composable
