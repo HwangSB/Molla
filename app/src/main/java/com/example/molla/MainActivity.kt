@@ -52,7 +52,6 @@ fun MainActivityContent() {
 
     MollaTheme {
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
                     title = { Text(appBarTitles[selectedIndex]) },
