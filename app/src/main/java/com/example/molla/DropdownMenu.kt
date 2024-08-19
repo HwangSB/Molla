@@ -10,7 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun DropdownMenuComponent(
+fun DropdownMenu(
     expanded: MutableState<Boolean>,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -46,9 +46,9 @@ fun DropdownMenuComponent(
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewDropdownMenuComponent() {
+fun DropdownMenuPreview() {
     val expanded = remember { mutableStateOf(true) }
-    DropdownMenuComponent(
+    DropdownMenu(
         expanded = expanded,
         onEditClick = {},
         onDeleteClick = {},

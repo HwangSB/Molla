@@ -1,9 +1,5 @@
 package com.example.molla
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,16 +32,8 @@ import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.ui.theme.MollaTheme
 
-class AnalysisActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { AnalysisActivityContent() }
-    }
-}
-
 @Composable
-fun AnalysisActivityContent() {
+fun AnalysisPageContent() {
 //    var isLoading by remember { mutableStateOf(true) }
 
     MollaTheme {
@@ -263,6 +251,6 @@ fun ForumEmotionBarChart(
 
 @Preview(showBackground = true)
 @Composable
-fun AnalysisActivityPreview() {
-    AnalysisActivityContent()
+fun AnalysisPagePreview() {
+    AnalysisPageContent()
 }

@@ -1,9 +1,5 @@
 package com.example.molla
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,13 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,32 +38,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.substring
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.ui.theme.MollaTheme
-
-class PostDetailActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { PostDetailActivityContent() }
-    }
-}
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostDetailActivityContent() {
-    val title = "긴글입니다긴글입니다긴글입니다긴글입니다"
-    val content = "내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다 내용입니다"
-    val writer = "작성자"
-    val date = "8월 8일"
+fun PostDetailActivityContent(navController: NavController, feed: Feed) {
+    val simpleDateFormat = SimpleDateFormat("M월 d일", Locale.KOREA)
+    val title = feed.title
+    val content = feed.content
+    val writer = feed.writer
+    val date = simpleDateFormat.format(feed.timestamp)
 
     val scrolledTitle = if (title.length >= 6) title.substring(0, 6) + "..." else title
     var appBarTitle by remember { mutableStateOf("") }
@@ -117,7 +104,9 @@ fun PostDetailActivityContent() {
                 CenterAlignedTopAppBar(
                     title = { Text(text = appBarTitle) },
                     navigationIcon = {
-                        IconButton(onClick = { /*TODO*/ }) {
+                        IconButton(onClick = {
+                            navController.popBackStack()
+                        }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                         }
                     },
@@ -125,7 +114,7 @@ fun PostDetailActivityContent() {
                         IconButton(onClick = { expanded.value = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = null)
                         }
-                        DropdownMenuComponent(
+                        DropdownMenu(
                             expanded = expanded,
                             onEditClick = { /* TODO */ },
                             onDeleteClick = { /* TODO */ },
@@ -164,11 +153,12 @@ fun PostDetailActivityContent() {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
                         ) {
                             Text(
-                                text = "작성자",
+                                text = writer,
                                 style = TextStyle(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
@@ -177,7 +167,8 @@ fun PostDetailActivityContent() {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Row (
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier
+                                    .padding(16.dp)
                                     .width(156.dp)
                             ){
                                 Box(
@@ -247,5 +238,16 @@ fun PostDetailActivityContent() {
 @Preview(showBackground = true)
 @Composable
 fun PostDetailActivityPreview() {
-    PostDetailActivityContent()
+    val navController = rememberNavController()
+    val feed = Feed(
+        feedId = 0,
+        title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal 0!",
+        content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        commentCount = 0,
+        emotionType = 0,
+        emotionCount = 3,
+        writer = "박준힉",
+        timestamp = System.currentTimeMillis(),
+    )
+    PostDetailActivityContent(navController, feed)
 }

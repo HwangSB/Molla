@@ -3,7 +3,6 @@ package com.example.molla
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,16 +33,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+@Serializable
+data class Feed(
+    val feedId: Int,
+    val title: String,
+    val content: String,
+    val commentCount: Int,
+    val emotionType: Int,
+    val emotionCount: Int,
+    val writer: String,
+    val timestamp: Long,
+)
+
 @Composable
-fun ForumPage(modifier: Modifier) {
+fun ForumPage(navController: NavController, modifier: Modifier) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -70,15 +86,23 @@ fun ForumPage(modifier: Modifier) {
             }
         }
         items(5) { index ->
-            ForumCard(index = index, feed = Feed(
+            val feed = Feed(
+                feedId = index,
                 title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal $index!",
                 content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                 commentCount = 0,
                 emotionType = 0,
                 emotionCount = 3,
                 writer = "작성자",
-                timestamp = System.currentTimeMillis()
-            ))
+                timestamp = System.currentTimeMillis(),
+            )
+            ForumCard(
+                feed = feed,
+                onClick = {
+                    val feedString = Json.encodeToString(feed)
+                    navController.navigate("${Screen.DetailedFeed.name}/$feedString")
+                }
+            )
         }
 
         // Bottom padding for the last item
@@ -86,26 +110,16 @@ fun ForumPage(modifier: Modifier) {
     }
 }
 
-data class Feed(
-    val title: String,
-    val content: String,
-    val commentCount: Int,
-    val emotionType: Int,
-    val emotionCount: Int,
-    val writer: String,
-    val timestamp: Long,
-)
-
 @Composable
-fun ForumCard(index: Int, feed: Feed) {
+fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .animateContentSize()
-            .clickable { /*TODO*/ },
+            .animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
+        onClick = onClick
     ) {
         Column {
             Spacer(modifier = Modifier.height(16.dp))
@@ -205,5 +219,6 @@ fun CommunicationTag(
 @Preview(showBackground = true)
 @Composable
 fun ForumPagePreview() {
-    ForumPage(Modifier)
+    val navController = rememberNavController()
+    ForumPage(navController, Modifier)
 }

@@ -22,9 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun LoadingPage(modifier: Modifier) {
+fun LoadAnalysisPage(navController: NavController) {
     val analysisStepLabel = remember {
         mutableListOf(
             "AI 상담사가 내용을 분석중이에요...",
@@ -35,9 +37,7 @@ fun LoadingPage(modifier: Modifier) {
 
     Box {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(modifier),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -82,9 +82,7 @@ fun LoadingPage(modifier: Modifier) {
             Spacer(modifier = Modifier.height(128.dp))
         }
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(modifier),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
@@ -101,6 +99,7 @@ fun LoadingPage(modifier: Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-fun LoadingPagePreview() {
-    LoadingPage(Modifier)
+fun LoadAnalysisPagePreview() {
+    val navController = rememberNavController()
+    LoadAnalysisPage(navController)
 }

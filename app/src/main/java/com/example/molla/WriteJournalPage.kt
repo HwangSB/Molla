@@ -1,22 +1,12 @@
 package com.example.molla
 
-import android.net.Uri
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -45,20 +35,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.molla.ui.theme.MollaTheme
-import coil.compose.rememberAsyncImagePainter
-
-class DiaryWriteActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { DiaryWriteActivityContent() }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryWriteActivityContent() {
+fun WriteJournalPage(navController: NavController) {
 //    var selectedImages by remember { mutableStateOf(listOf<Uri>()) }
 //    val imagePickerLauncher = rememberLauncherForActivityResult(
 //        contract = ActivityResultContracts.GetContent()
@@ -78,12 +61,20 @@ fun DiaryWriteActivityContent() {
                 TopAppBar(
                     title = { Text("일기 작성") },
                     navigationIcon = {
-                        IconButton(onClick = { /*TODO*/ }) {
+                        IconButton(onClick = {
+                            navController.popBackStack()
+                        }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                         }
                     },
                     actions = {
-                        TextButton(onClick = { /*TODO*/ }) {
+                        TextButton(
+                            onClick = {
+                                navController.navigate(Screen.LoadAnalysis.name) {
+                                    popUpTo(Screen.Main.name)
+                                }
+                            }
+                        ) {
                             Text(
                                 text = "등록",
                                 style = TextStyle(
@@ -163,6 +154,7 @@ fun DiaryWriteActivityContent() {
 
 @Preview(showBackground = true)
 @Composable
-fun DiaryWriteActivityPreview() {
-    DiaryWriteActivityContent()
+fun WriteJournalPagePreview() {
+    val navController = rememberNavController()
+    WriteJournalPage(navController)
 }

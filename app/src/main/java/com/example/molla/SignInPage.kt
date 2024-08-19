@@ -1,12 +1,7 @@
 package com.example.molla
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -37,26 +30,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon.Companion.Text
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-class LoginActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { LoginActivityContent() }
-    }
-}
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun LoginActivityContent() {
+fun SignInPage(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -117,7 +101,10 @@ fun LoginActivityContent() {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    TODO("로그인 처리")
+                    // TODO: Login
+                    navController.navigate(Screen.Main.name) {
+                        popUpTo(0)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,8 +149,11 @@ fun LoginActivityContent() {
                         .fillMaxHeight(0.04f)
                         .width(1.dp)
                 )
-                TextButton(onClick = {
-                    TODO("회원 가입") }
+                TextButton(
+                    onClick = {
+                        navController.navigate(Screen.SignUp.name)
+//                        TODO("회원 가입")
+                    }
                 ) {
                     Text(
                         text = "회원가입",
@@ -173,7 +163,12 @@ fun LoginActivityContent() {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(
-                onClick = { TODO("네이버 로그인") },
+                onClick = {
+                    navController.navigate(Screen.Main.name) {
+                        popUpTo(0)
+                    }
+//                    TODO("네이버 로그인")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
@@ -197,7 +192,12 @@ fun LoginActivityContent() {
             }
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { TODO("구글 로그인") },
+                onClick = {
+                    navController.navigate(Screen.Main.name) {
+                        popUpTo(0)
+                    }
+//                    TODO("구글 로그인")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
@@ -226,6 +226,7 @@ fun LoginActivityContent() {
 
 @Preview(showBackground = true)
 @Composable
-fun LoginPagePreview() {
-    LoginActivityContent()
+fun SignInPagePreview() {
+    val navController = rememberNavController()
+    SignInPage(navController)
 }
