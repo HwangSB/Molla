@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.config
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.fadeIn
@@ -7,6 +7,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.MainPage
+import com.example.molla.analysis.LoadAnalysisPage
+import com.example.molla.counsel.CounselPageContent
+import com.example.molla.forum.Feed
+import com.example.molla.forum.PostDetailActivityContent
+import com.example.molla.forum.WriteFeedPage
+import com.example.molla.journal.WriteJournalPage
+import com.example.molla.sign.SignInPage
+import com.example.molla.sign.SignUpPage
 import kotlinx.serialization.json.Json
 
 enum class Screen {

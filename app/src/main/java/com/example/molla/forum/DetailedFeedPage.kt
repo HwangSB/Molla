@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.forum
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.common.ChatBubble
+import com.example.molla.common.ChatInputSection
+import com.example.molla.common.ChatMessageUiModel
+import com.example.molla.common.DropdownMenu
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt

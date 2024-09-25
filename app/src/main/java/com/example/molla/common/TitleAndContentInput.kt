@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.common
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

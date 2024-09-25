@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.common
 
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi

@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.analysis
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.molla.journal.DashboardCard
+import com.example.molla.journal.EmotionBarChart
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt

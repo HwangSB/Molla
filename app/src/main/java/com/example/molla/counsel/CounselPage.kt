@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.counsel
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +17,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.common.ChatBubble
+import com.example.molla.common.ChatInputSection
+import com.example.molla.common.ChatMessageUiModel
+import com.example.molla.common.LabeledHorizontalDivider
 import com.example.molla.ui.theme.MollaTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,7 +41,8 @@ fun CounselPageContent(navController: NavController) {
             ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
             ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
             ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자"),
-            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자"))
+            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자")
+        )
     }
 
     MollaTheme {

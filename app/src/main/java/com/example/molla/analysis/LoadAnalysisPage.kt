@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.analysis
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

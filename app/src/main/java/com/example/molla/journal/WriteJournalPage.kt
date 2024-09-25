@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.journal
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.R
+import com.example.molla.config.Screen
+import com.example.molla.common.TitleAndContentInput
 import com.example.molla.ui.theme.MollaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

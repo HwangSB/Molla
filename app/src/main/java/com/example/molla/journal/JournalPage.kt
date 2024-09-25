@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.journal
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -47,6 +47,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.molla.common.DraggableBox
+import com.example.molla.common.LabeledHorizontalDivider
+import com.example.molla.R
 import com.example.molla.ui.theme.ActionDelete
 import com.example.molla.ui.theme.ActionEdit
 import com.example.molla.ui.theme.EmotionAngry

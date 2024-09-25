@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.sign
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.R
+import com.example.molla.config.Screen
 
 @Composable
 fun SignInPage(navController: NavController) {

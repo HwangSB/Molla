@@ -26,6 +26,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.config.Screen
+import com.example.molla.forum.ForumPage
+import com.example.molla.journal.JournalPage
 import com.example.molla.ui.theme.MollaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

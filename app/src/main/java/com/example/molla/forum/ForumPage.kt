@@ -1,4 +1,4 @@
-package com.example.molla
+package com.example.molla.forum
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.R
+import com.example.molla.config.Screen
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
