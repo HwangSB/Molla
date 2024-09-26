@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.R
-import com.example.molla.config.Screen
 import com.example.molla.common.TitleAndContentInput
 import com.example.molla.ui.theme.MollaTheme
 
@@ -73,9 +72,9 @@ fun WriteJournalPage(navController: NavController) {
                     actions = {
                         TextButton(
                             onClick = {
-                                navController.navigate(Screen.LoadAnalysis.name) {
-                                    popUpTo(Screen.Main.name)
-                                }
+//                                navController.navigate(Screen.LoadAnalysis.name) {
+//                                    popUpTo(Screen.Main.name)
+//                                }
                             }
                         ) {
                             Text(
@@ -125,7 +124,7 @@ fun WriteJournalPage(navController: NavController) {
 //                                .background(Color.Gray, shape = RoundedCornerShape(8.dp))
 //                                .aspectRatio(1f)
 //                        )
-                        index -> Box(
+                            index -> Box(
                         modifier = Modifier
                             .size(100.dp)
                             .background(Color.Transparent, shape = RoundedCornerShape(8.dp))
@@ -134,14 +133,14 @@ fun WriteJournalPage(navController: NavController) {
                                     removeAt(index)
                                 }
                             },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = selectedImages[index]),
-                                contentDescription = null,
-                                modifier = Modifier.size(100.dp)
-                            )
-                        }
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = selectedImages[index]),
+                            contentDescription = null,
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
                     }
                 }
                 TitleAndContentInput(
