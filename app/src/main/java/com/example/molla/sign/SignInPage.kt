@@ -36,15 +36,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.R
 import com.example.molla.config.Screen
 
 @Composable
-fun SignInPage(navController: NavController) {
+fun SignInPage(navController: NavController, signInViewModel: SignInViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -101,12 +103,30 @@ fun SignInPage(navController: NavController) {
                     .background(Color(0xFFFDF6FF), RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            if (errorMessage.isNotEmpty()) {
+                Text(text = errorMessage, color = Color.Red)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Button(
                 onClick = {
                     // TODO: Login
-                    navController.navigate(Screen.Main.name) {
-                        popUpTo(0)
-                    }
+//                    navController.navigate(Screen.Main.name) {
+//                        popUpTo(0)
+//                    }
+                    signInViewModel.login(
+                        email = email,
+                        password = password,
+                        onSuccess = {
+                            navController.navigate(Screen.Main.name) {
+                                popUpTo(0)
+                            }
+                        },
+                        onError = { message ->
+                            errorMessage = message
+                        }
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()

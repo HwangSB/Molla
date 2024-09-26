@@ -2,18 +2,19 @@ package com.example.molla.api.config
 
 import com.example.molla.api.dto.request.DiaryCreateRequest
 import com.example.molla.api.dto.request.DiaryUpdateRequest
+import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.response.DiaryCreateResponse
 import com.example.molla.api.dto.response.DiaryDeleteResponse
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.DiaryUpdateResponse
+import com.example.molla.api.dto.response.LoginSuccessResponse
+import com.example.molla.api.dto.response.common.StandardResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Headers
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -52,4 +53,10 @@ interface ApiService {
     fun deleteDiary(
         @Path("id") id: Long
     ): Call<DiaryDeleteResponse>
+
+    /**
+     * User
+     */
+    @POST("api/user/login")
+    fun login(@Body request: LoginRequest): Call<StandardResponse<LoginSuccessResponse>>
 }
