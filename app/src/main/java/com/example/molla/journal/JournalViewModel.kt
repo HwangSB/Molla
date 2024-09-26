@@ -1,6 +1,7 @@
 package com.example.molla.journal
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.molla.MollaApp
@@ -46,7 +47,7 @@ class JournalViewModel : ViewModel() {
                     val inputStream = contentResolver.openInputStream(uri)
                     val bytes = inputStream?.readBytes()
                     val requestFile = bytes?.toRequestBody("multipart/form-data".toMediaTypeOrNull())
-                    val fileName = uri.lastPathSegment ?: "image_${System.currentTimeMillis()}.jpg"
+                    val fileName = "image_${System.currentTimeMillis()}.png"
                     val part = requestFile?.let {
                         MultipartBody.Part.createFormData("images", fileName, it)
                     }

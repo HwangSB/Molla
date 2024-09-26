@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,15 +30,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.config.Screen
 
 @Composable
-fun SignUpPage(navController: NavController) {
+fun SignUpPage(navController: NavController, signUpViewModel: SignUpViewModel = viewModel()) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var checkedPassword by remember { mutableStateOf("") }
+    var showErrorMessage by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -112,7 +118,26 @@ fun SignUpPage(navController: NavController) {
             Spacer(modifier = Modifier.height(40.dp))
             Button(
                 onClick = {
-                    TODO("validation 후 회원가입 처리")
+                    val error = signUpViewModel.validateInput(name, email, password, checkedPassword)
+                    if (error == null) {
+                        signUpViewModel.signUp(
+                            username = name,
+                            email = email,
+                            password = password,
+                            onSuccess = {
+                                navController.navigate(Screen.Main.name) {
+                                    popUpTo(0)
+                                }
+                            },
+                            onError = { errorMessage ->
+                                validationError = errorMessage
+                                showErrorMessage = true
+                            }
+                        )
+                    } else {
+                        validationError = error
+                        showErrorMessage = true
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,6 +147,19 @@ fun SignUpPage(navController: NavController) {
             ) {
                 Text("가입하기", fontSize = 14.sp, color = Color.White)
             }
+        }
+
+        if (showErrorMessage) {
+            AlertDialog(
+                onDismissRequest = { showErrorMessage = false },
+                title = { Text(text = "입력 오류") },
+                text = { Text(text = validationError ?: "") },
+                confirmButton = {
+                    TextButton(onClick = { showErrorMessage = false }) {
+                        Text("확인")
+                    }
+                }
+            )
         }
     }
 }
