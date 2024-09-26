@@ -1,6 +1,5 @@
 package com.example.molla.api.config
 
-import com.example.molla.api.dto.request.DiaryCreateRequest
 import com.example.molla.api.dto.request.DiaryUpdateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.response.DiaryCreateResponse
