@@ -30,9 +30,9 @@ interface ApiService {
 
     @Multipart
     @POST("api/diary/save")
-    suspend fun saveDiary(
+    fun saveDiary(
         @Part("diary") diaryCreateRequest: RequestBody,
-        @Part("images") images: List<MultipartBody.Part>
+        @Part images: List<MultipartBody.Part>
     ): Call<StandardResponse<Long>>
 
     @GET("api/diary/list/{id}")
