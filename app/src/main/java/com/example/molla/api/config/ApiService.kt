@@ -2,7 +2,6 @@ package com.example.molla.api.config
 
 import com.example.molla.api.dto.request.DiaryUpdateRequest
 import com.example.molla.api.dto.request.LoginRequest
-import com.example.molla.api.dto.response.DiaryCreateResponse
 import com.example.molla.api.dto.response.DiaryDeleteResponse
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.DiaryUpdateResponse
@@ -26,14 +25,14 @@ interface ApiService {
     @POST("api/diary/save")
     fun saveDiary(
         @Part("diary") diaryCreateRequest: RequestBody,
-    ): Call<DiaryCreateResponse>
+    ): Call<StandardResponse<Long>>
 
     @Multipart
     @POST("api/diary/save")
     suspend fun saveDiary(
         @Part("diary") diaryCreateRequest: RequestBody,
         @Part("images") images: List<MultipartBody.Part>
-    ): Call<DiaryCreateResponse>
+    ): Call<StandardResponse<Long>>
 
     @GET("api/diary/list/{id}")
     fun listDiary(

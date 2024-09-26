@@ -112,21 +112,21 @@ fun SignInPage(navController: NavController, signInViewModel: SignInViewModel = 
             Button(
                 onClick = {
                     // TODO: Login
-//                    navController.navigate(Screen.Main.name) {
-//                        popUpTo(0)
-//                    }
-                    signInViewModel.login(
-                        email = email,
-                        password = password,
-                        onSuccess = {
-                            navController.navigate(Screen.Main.name) {
-                                popUpTo(0)
-                            }
-                        },
-                        onError = { message ->
-                            errorMessage = message
-                        }
-                    )
+                    navController.navigate(Screen.Main.name) {
+                        popUpTo(0)
+                    }
+//                    signInViewModel.login(
+//                        email = email,
+//                        password = password,
+//                        onSuccess = {
+//                            navController.navigate(Screen.Main.name) {
+//                                popUpTo(0)
+//                            }
+//                        },
+//                        onError = { message ->
+//                            errorMessage = message
+//                        }
+//                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()

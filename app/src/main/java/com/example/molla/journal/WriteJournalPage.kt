@@ -1,12 +1,16 @@
 package com.example.molla.journal
 
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,39 +35,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.molla.R
-import com.example.molla.api.config.ApiClient
-import com.example.molla.api.dto.request.DiaryCreateRequest
-import com.example.molla.api.dto.response.DiaryCreateResponse
+import coil.compose.rememberAsyncImagePainter
 import com.example.molla.common.TitleAndContentInput
+import com.example.molla.config.Screen
 import com.example.molla.ui.theme.MollaTheme
-import com.google.gson.Gson
-import okhttp3.MediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WriteJournalPage(navController: NavController) {
-//    var selectedImages by remember { mutableStateOf(listOf<Uri>()) }
-//    val imagePickerLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.GetContent()
-//    ) { uri: Uri? ->
-//        uri?.let { selectedImages = selectedImages + it }
-//    }
-
-    var selectedImages by remember { mutableStateOf(listOf<Int>()) }
-    val placeholderImageRes = R.drawable.tree
+fun WriteJournalPage(navController: NavController, journalViewModel: JournalViewModel = viewModel()) {
+    var selectedImages by remember { mutableStateOf(listOf<Uri>()) }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedImages = selectedImages + it }
+    }
 
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -83,44 +75,19 @@ fun WriteJournalPage(navController: NavController) {
                     actions = {
                         TextButton(
                             onClick = {
-                                val diaryCreateJsonString = Gson().toJson(
-                                    DiaryCreateRequest(
-                                        title = title,
-                                        content = content,
-                                        userId = "2352",
-                                    )
+                                journalViewModel.writeDiary(
+                                    title = title,
+                                    content = content,
+                                    images = selectedImages,
+                                    onSuccess = {
+                                        navController.navigate(Screen.LoadAnalysis.name) {
+                                            popUpTo(Screen.Main.name)
+                                        }
+                                    },
+                                    onError = { message ->
+                                        Log.e("WriteJournalPage", message)
+                                    }
                                 )
-                                val diaryCreateRequestBody = diaryCreateJsonString.toRequestBody("application/json".toMediaTypeOrNull())
-
-                                val call = ApiClient.apiService.saveDiary(diaryCreateRequestBody)
-                                call.enqueue(object : Callback<DiaryCreateResponse> {
-                                    override fun onResponse(
-                                        call: Call<DiaryCreateResponse>,
-                                        response: Response<DiaryCreateResponse>
-                                    ) {
-                                        Log.d("DiaryCreateResponse", response.body().toString())
-                                    }
-
-                                    override fun onFailure(
-                                        call: Call<DiaryCreateResponse>,
-                                        t: Throwable
-                                    ) {
-                                        Log.e("DiaryCreateResponse", "Request: ${call.request().toString()}")
-
-                                        // t.message만으로 부족하므로 스택 트레이스를 출력
-                                        Log.e("DiaryCreateResponse", "Error message: ${t.message}")
-                                        t.printStackTrace() // 스택 트레이스를 로그로 출력
-
-                                        // 스택 트레이스를 Logcat에 명시적으로 출력
-                                        Log.e("DiaryCreateResponse", Log.getStackTraceString(t)) // 스택 트레이스를 문자열로 변환해 출력
-
-//                                        Log.d("DiaryCreateResponse", call.request().toString())
-//                                        Log.e("DiaryCreateResponse", t.message.toString())
-                                    }
-                                })
-//                                navController.navigate(Screen.LoadAnalysis.name) {
-//                                    popUpTo(Screen.Main.name)
-//                                }
                             }
                         ) {
                             Text(
@@ -153,40 +120,21 @@ fun WriteJournalPage(navController: NavController) {
                             modifier = Modifier
                                 .size(100.dp)
                                 .background(color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(8.dp))
-                                //.clickable { imagePickerLauncher.launch("image/*") },
-                                .clickable { selectedImages = selectedImages + placeholderImageRes },
+                                .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
                         }
                     }
                     items(selectedImages.size) {
-//                        index -> Image(
-//                            //painter = rememberAsyncImagePainter(selectedImages[index]),
-//                            painter = painterResource(id = selectedImages[index]),
-//                            contentDescription = null,
-//                            modifier = Modifier
-//                                .size(100.dp)
-//                                .background(Color.Gray, shape = RoundedCornerShape(8.dp))
-//                                .aspectRatio(1f)
-//                        )
-                        index -> Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .background(Color.Transparent, shape = RoundedCornerShape(8.dp))
-                            .clickable {
-                                selectedImages = selectedImages.toMutableList().apply {
-                                    removeAt(index)
-                                }
-                            },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = selectedImages[index]),
-                                contentDescription = null,
-                                modifier = Modifier.size(100.dp)
-                            )
-                        }
+                        index -> Image(
+                            painter = rememberAsyncImagePainter(selectedImages[index]),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .background(Color.Gray, shape = RoundedCornerShape(8.dp))
+                                .aspectRatio(1f)
+                        )
                     }
                 }
                 TitleAndContentInput(
