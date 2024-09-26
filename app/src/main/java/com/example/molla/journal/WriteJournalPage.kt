@@ -1,5 +1,6 @@
 package com.example.molla.journal
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,8 +39,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.R
+import com.example.molla.api.config.ApiClient
+import com.example.molla.api.dto.request.DiaryCreateRequest
+import com.example.molla.api.dto.response.DiaryCreateResponse
 import com.example.molla.common.TitleAndContentInput
 import com.example.molla.ui.theme.MollaTheme
+import com.google.gson.Gson
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +83,41 @@ fun WriteJournalPage(navController: NavController) {
                     actions = {
                         TextButton(
                             onClick = {
+                                val diaryCreateJsonString = Gson().toJson(
+                                    DiaryCreateRequest(
+                                        title = title,
+                                        content = content,
+                                        userId = "2352",
+                                    )
+                                )
+                                val diaryCreateRequestBody = diaryCreateJsonString.toRequestBody("application/json".toMediaTypeOrNull())
+
+                                val call = ApiClient.apiService.saveDiary(diaryCreateRequestBody)
+                                call.enqueue(object : Callback<DiaryCreateResponse> {
+                                    override fun onResponse(
+                                        call: Call<DiaryCreateResponse>,
+                                        response: Response<DiaryCreateResponse>
+                                    ) {
+                                        Log.d("DiaryCreateResponse", response.body().toString())
+                                    }
+
+                                    override fun onFailure(
+                                        call: Call<DiaryCreateResponse>,
+                                        t: Throwable
+                                    ) {
+                                        Log.e("DiaryCreateResponse", "Request: ${call.request().toString()}")
+
+                                        // t.message만으로 부족하므로 스택 트레이스를 출력
+                                        Log.e("DiaryCreateResponse", "Error message: ${t.message}")
+                                        t.printStackTrace() // 스택 트레이스를 로그로 출력
+
+                                        // 스택 트레이스를 Logcat에 명시적으로 출력
+                                        Log.e("DiaryCreateResponse", Log.getStackTraceString(t)) // 스택 트레이스를 문자열로 변환해 출력
+
+//                                        Log.d("DiaryCreateResponse", call.request().toString())
+//                                        Log.e("DiaryCreateResponse", t.message.toString())
+                                    }
+                                })
 //                                navController.navigate(Screen.LoadAnalysis.name) {
 //                                    popUpTo(Screen.Main.name)
 //                                }
@@ -124,7 +170,7 @@ fun WriteJournalPage(navController: NavController) {
 //                                .background(Color.Gray, shape = RoundedCornerShape(8.dp))
 //                                .aspectRatio(1f)
 //                        )
-                            index -> Box(
+                        index -> Box(
                         modifier = Modifier
                             .size(100.dp)
                             .background(Color.Transparent, shape = RoundedCornerShape(8.dp))
@@ -133,14 +179,14 @@ fun WriteJournalPage(navController: NavController) {
                                     removeAt(index)
                                 }
                             },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = selectedImages[index]),
-                            contentDescription = null,
-                            modifier = Modifier.size(100.dp)
-                        )
-                    }
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = selectedImages[index]),
+                                contentDescription = null,
+                                modifier = Modifier.size(100.dp)
+                            )
+                        }
                     }
                 }
                 TitleAndContentInput(

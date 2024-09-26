@@ -1,9 +1,8 @@
 package com.example.molla.api.config
 
-import com.example.molla.api.dto.request.DiaryCreateRequest
 import com.example.molla.api.dto.request.DiaryUpdateRequest
-import com.example.molla.api.dto.response.DiaryCreateResponse
 import com.example.molla.api.dto.request.LoginRequest
+import com.example.molla.api.dto.response.DiaryCreateResponse
 import com.example.molla.api.dto.response.DiaryDeleteResponse
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.DiaryUpdateResponse
@@ -12,7 +11,6 @@ import com.example.molla.api.dto.response.common.StandardResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

@@ -16,4 +16,3 @@ class ApiClient {
         val apiService: ApiService = retrofit.create(ApiService::class.java)
     }
 }
-
