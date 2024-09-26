@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.molla.common.DraggableBox
 import com.example.molla.common.LabeledHorizontalDivider
 import com.example.molla.R
@@ -61,6 +62,8 @@ import com.example.molla.ui.theme.EmotionSad
 @Composable
 fun JournalPage(modifier: Modifier, isDashboardOpened: Boolean) {
     // TODO: Load journal data from server
+    val journalViewModel: JournalViewModel = viewModel()
+    journalViewModel.listDiaries()
 
     LazyColumn(
         modifier = Modifier

@@ -37,7 +37,7 @@ interface ApiService {
     ): Call<StandardResponse<Long>>
 
     @GET("api/diary/list/{id}")
-    fun listDiary(
+    fun listDiaries(
         @Path("id") id: Long,
         @Query("pageNumber") pageNumber: Int,
         @Query("pageSize") pageSize: Int

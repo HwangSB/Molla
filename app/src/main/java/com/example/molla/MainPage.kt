@@ -33,8 +33,8 @@ import com.example.molla.ui.theme.MollaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainPage(navController: NavController) {
-    var selectedIndex by remember { mutableIntStateOf(0) }
+fun MainPage(navController: NavController, actionIndex: Int = 0) {
+    var selectedIndex by remember { mutableIntStateOf(actionIndex) }
     var isDashboardOpened by remember { mutableStateOf(true) }
 
     val selectedIconButtonColor = IconButtonDefaults.iconButtonColors(
