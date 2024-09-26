@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.molla.MainPage
 import com.example.molla.analysis.LoadAnalysisPage
 import com.example.molla.counsel.CounselPageContent
@@ -40,8 +42,17 @@ fun NavigationStack() {
         composable(Screen.SignUp.name) {
             SignUpPage(navController)
         }
-        composable(Screen.Main.name) {
-            MainPage(navController)
+        composable(
+            "${Screen.Main.name}?actionIndex={actionIndex}",
+            arguments = listOf(navArgument("actionIndex") {
+                defaultValue = 0
+                type = NavType.IntType
+            })
+        ) { navBackStackEntry ->
+            val actionIndex = navBackStackEntry.arguments?.getInt("actionIndex")
+            actionIndex?.let {
+                MainPage(navController, it)
+            }
         }
         composable(
             Screen.WriteJournal.name,

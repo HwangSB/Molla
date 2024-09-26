@@ -1,7 +1,8 @@
 package com.example.molla.journal
 
+import android.content.ContentResolver
 import android.net.Uri
-import android.util.Log
+import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.molla.MollaApp
@@ -16,7 +17,6 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Call
 import retrofit2.Callback
-import retrofit2.HttpException
 import retrofit2.Response
 
 class JournalViewModel : ViewModel() {
@@ -27,14 +27,13 @@ class JournalViewModel : ViewModel() {
         onSuccess: (Long) -> Unit,
         onError: (String) -> Unit
     ) {
-        val diaryCreateJsonString = Gson().toJson(
+        val diaryCreateRequestBody = Gson().toJson(
             DiaryCreateRequest(
                 title = title,
                 content = content,
                 userId = MollaApp.instance.userId.toString(),
             )
-        )
-        val diaryCreateRequestBody = diaryCreateJsonString.toRequestBody("application/json".toMediaTypeOrNull())
+        ).toRequestBody("application/json".toMediaTypeOrNull())
 
         viewModelScope.launch {
             val call = if (images.isEmpty()) {
@@ -47,7 +46,7 @@ class JournalViewModel : ViewModel() {
                     val inputStream = contentResolver.openInputStream(uri)
                     val bytes = inputStream?.readBytes()
                     val requestFile = bytes?.toRequestBody("multipart/form-data".toMediaTypeOrNull())
-                    val fileName = "image_${System.currentTimeMillis()}.png"
+                    val fileName = getFileNameFromUri(contentResolver, uri)
                     val part = requestFile?.let {
                         MultipartBody.Part.createFormData("images", fileName, it)
                     }
@@ -71,19 +70,7 @@ class JournalViewModel : ViewModel() {
                         return
                     }
 
-                    val errorBody = response.errorBody()?.toString()
-                    errorBody.let {
-                        try {
-                            val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
-                            val status = errorResponse.status
-                            val errorMessage = errorResponse.message
-                            val fieldErrors = errorResponse.fieldErrors
-
-                            onError("[Status] $status - [Error Response]: $errorMessage, Fields: $fieldErrors")
-                        } catch (e: Exception) {
-                            onError("Json Parsing Error: ${e.message}")
-                        }
-                    }
+                    handleErrorResponse(response, onError)
                 }
 
                 override fun onFailure(
@@ -94,5 +81,46 @@ class JournalViewModel : ViewModel() {
                 }
             })
         }
+    }
+
+    fun listDiaries() {
+
+    }
+
+    private fun handleErrorResponse(response: Response<StandardResponse<Long>>, onError: (String) -> Unit) {
+        val errorBody = response.errorBody()?.toString()
+        errorBody?.let {
+            try {
+                val standardErrorResponse = Gson().fromJson(it, StandardResponse::class.java)
+                val errorResponse = Gson().fromJson(
+                    Gson().toJson(standardErrorResponse.data),
+                    ErrorResponse::class.java
+                )
+
+                val status = errorResponse.status
+                val errorMessage = errorResponse.message
+                val fieldErrors = errorResponse.fieldErrors
+
+                onError("[Status] $status - [Error Response]: $errorMessage, Fields: $fieldErrors")
+            } catch (e: Exception) {
+                onError("Json Parsing Error: ${e.message}")
+            }
+        } ?: run {
+            onError("Unknown Error")
+        }
+    }
+
+    private fun getFileNameFromUri(contentResolver: ContentResolver, uri: Uri): String? {
+        var name: String? = null
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1) {
+                    name = it.getString(nameIndex)
+                }
+            }
+        }
+        return name
     }
 }
