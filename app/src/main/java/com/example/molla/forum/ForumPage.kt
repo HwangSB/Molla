@@ -61,7 +61,7 @@ data class Feed(
 )
 
 @Composable
-fun ForumPage(navController: NavController, modifier: Modifier) {
+fun ForumPage(navController: NavController, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

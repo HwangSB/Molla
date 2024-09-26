@@ -1,6 +1,7 @@
 package com.example.molla.api.config
 
 import com.example.molla.api.dto.request.DiaryUpdateRequest
+import com.example.molla.api.dto.request.ForumCreateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.request.SignUpRequest
 import com.example.molla.api.dto.response.DiaryDeleteResponse
@@ -61,4 +62,10 @@ interface ApiService {
 
     @POST("api/user/signup")
     fun signup(@Body request: SignUpRequest): Call<StandardResponse<Long>>
+
+    /**
+     * Forum
+     */
+    @POST("api/post/save")
+    fun saveForum(@Body request: ForumCreateRequest): Call<StandardResponse<Long>>
 }

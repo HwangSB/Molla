@@ -125,7 +125,7 @@ fun SignUpPage(navController: NavController, signUpViewModel: SignUpViewModel = 
                             email = email,
                             password = password,
                             onSuccess = {
-                                navController.navigate(Screen.Main.name) {
+                                navController.navigate(Screen.SignIn.name) {
                                     popUpTo(0)
                                 }
                             },

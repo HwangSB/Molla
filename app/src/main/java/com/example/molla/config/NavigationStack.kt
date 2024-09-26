@@ -11,6 +11,7 @@ import com.example.molla.MainPage
 import com.example.molla.analysis.LoadAnalysisPage
 import com.example.molla.counsel.CounselPageContent
 import com.example.molla.forum.Feed
+import com.example.molla.forum.ForumPage
 import com.example.molla.forum.PostDetailActivityContent
 import com.example.molla.forum.WriteFeedPage
 import com.example.molla.journal.WriteJournalPage
@@ -27,6 +28,7 @@ enum class Screen {
     DetailedFeed,
     LoadAnalysis,
     Counsel,
+    Forum
 }
 
 @Composable
@@ -42,6 +44,9 @@ fun NavigationStack() {
         }
         composable(Screen.Main.name) {
             MainPage(navController)
+        }
+        composable(Screen.Forum.name) {
+            ForumPage(navController)
         }
         composable(
             Screen.WriteJournal.name,
