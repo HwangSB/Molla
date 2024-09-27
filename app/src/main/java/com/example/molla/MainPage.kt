@@ -97,7 +97,7 @@ fun MainPage(navController: NavController, actionIndex: Int = 0) {
             }
         ) { innerPadding ->
             when (selectedIndex) {
-                0 -> JournalPage(modifier = Modifier.padding(innerPadding), isDashboardOpened)
+                0 -> JournalPage(navController, modifier = Modifier.padding(innerPadding), isDashboardOpened)
                 1 -> ForumPage(navController, modifier = Modifier.padding(innerPadding))
             }
         }

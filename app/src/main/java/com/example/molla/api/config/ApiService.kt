@@ -1,12 +1,10 @@
 package com.example.molla.api.config
 
-import com.example.molla.api.dto.request.DiaryUpdateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.request.SignUpRequest
-import com.example.molla.api.dto.response.DiaryDeleteResponse
 import com.example.molla.api.dto.response.DiaryResponse
-import com.example.molla.api.dto.response.DiaryUpdateResponse
 import com.example.molla.api.dto.response.LoginSuccessResponse
+import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -40,18 +38,21 @@ interface ApiService {
         @Path("id") id: Long,
         @Query("pageNumber") pageNumber: Int,
         @Query("pageSize") pageSize: Int
-    ): Call<List<DiaryResponse>>
+    ): Call<StandardResponse<PageResponse<DiaryResponse>>>
 
+    @Multipart
     @PUT("api/diary/{id}")
     fun updateDiary(
         @Path("id") id: Long,
-        @Body diaryUpdateRequest: DiaryUpdateRequest
-    ): Call<DiaryUpdateResponse>
+        @Part("diary") diaryUpdateRequest: RequestBody,
+        @Part updateImages: List<MultipartBody.Part>,
+        @Part("deleteImages") deleteImageIds: RequestBody
+    ): Call<StandardResponse<Long>>
 
     @DELETE("api/diary/{id}")
     fun deleteDiary(
         @Path("id") id: Long
-    ): Call<DiaryDeleteResponse>
+    ): Call<StandardResponse<Long>>
 
     /**
      * User

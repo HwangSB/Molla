@@ -1,6 +1,7 @@
 package com.example.molla.journal
 
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,22 +44,48 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.molla.MollaApp
+import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.common.TitleAndContentInput
 import com.example.molla.config.Screen
 import com.example.molla.ui.theme.MollaTheme
+import com.example.molla.utils.convertBase64ToByteArray
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WriteJournalPage(navController: NavController, journalViewModel: JournalViewModel = viewModel()) {
-    var selectedImages by remember { mutableStateOf(listOf<Uri>()) }
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { selectedImages = selectedImages + it }
-    }
-
+fun WriteJournalPage(navController: NavController, updateJournalJson: String? = null, journalViewModel: JournalViewModel = viewModel()) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var selectedImages by remember { mutableStateOf(listOf<Pair<String, ByteArray>>()) }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            val inputStream = MollaApp.instance.contentResolver.openInputStream(uri)
+            val newImage = inputStream?.readBytes()
+            newImage?.let {
+                val fileName = getFileNameFromUri(uri)
+                selectedImages = selectedImages + Pair(fileName, newImage)
+            }
+        }
+    }
+
+    var isEdit = false
+    var diaryId = 0L
+    var previousImageIds = emptyList<Long>()
+    updateJournalJson?.let { journalJson ->
+        if (journalJson == "{}") return@let
+
+        isEdit = true
+
+        val diary = Json.decodeFromString<DiaryResponse>(journalJson)
+        diaryId = diary.diaryId
+        title = diary.title
+        content = diary.content
+        selectedImages = diary.images.map { Pair("prev_image.jpg", convertBase64ToByteArray(it.base64EncodedImage)) }
+        previousImageIds = diary.images.map { it.imageId }
+    }
 
     MollaTheme {
         Scaffold(
@@ -75,19 +102,33 @@ fun WriteJournalPage(navController: NavController, journalViewModel: JournalView
                     actions = {
                         TextButton(
                             onClick = {
-                                journalViewModel.writeDiary(
-                                    title = title,
-                                    content = content,
-                                    images = selectedImages,
-                                    onSuccess = {
-                                        navController.navigate(Screen.LoadAnalysis.name) {
-                                            popUpTo(Screen.Main.name)
-                                        }
-                                    },
-                                    onError = { message ->
-                                        Log.e("WriteJournalPage", message)
-                                    }
-                                )
+                                if (!isEdit) {
+                                    journalViewModel.writeDiary(
+                                        title = title,
+                                        content = content,
+                                        images = selectedImages,
+                                        onSuccess = {
+                                            navController.navigate(Screen.LoadAnalysis.name) {
+                                                popUpTo(Screen.Main.name)
+                                            }
+                                        },
+                                        onError = { Log.e("WriteJournalPage:Write", it) }
+                                    )
+                                } else {
+                                    journalViewModel.updateDiary(
+                                        diaryId = diaryId,
+                                        title = title,
+                                        content = content,
+                                        updateImages = selectedImages,
+                                        deleteImageIds = previousImageIds,
+                                        onSuccess = {
+                                            navController.navigate(Screen.LoadAnalysis.name) {
+                                                popUpTo(Screen.Main.name)
+                                            }
+                                        },
+                                        onError = { Log.e("WriteJournalPage:Update", it) }
+                                    )
+                                }
                             }
                         ) {
                             Text(
@@ -126,9 +167,10 @@ fun WriteJournalPage(navController: NavController, journalViewModel: JournalView
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
                         }
                     }
-                    items(selectedImages.size) {
-                        index -> Image(
-                            painter = rememberAsyncImagePainter(selectedImages[index]),
+                    items(selectedImages.size) { index ->
+                        val image = selectedImages[index].second
+                        Image(
+                            painter = rememberAsyncImagePainter(image),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(100.dp)
@@ -146,6 +188,20 @@ fun WriteJournalPage(navController: NavController, journalViewModel: JournalView
             }
         }
     }
+}
+
+private fun getFileNameFromUri(uri: Uri): String {
+    var name = ""
+    val cursor = MollaApp.instance.contentResolver.query(uri, null, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex != -1) {
+                name = it.getString(nameIndex)
+            }
+        }
+    }
+    return name
 }
 
 @Preview(showBackground = true)

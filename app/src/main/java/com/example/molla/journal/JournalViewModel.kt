@@ -1,14 +1,13 @@
 package com.example.molla.journal
 
-import android.content.ContentResolver
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.molla.MollaApp
 import com.example.molla.api.config.ApiClient
 import com.example.molla.api.dto.request.DiaryCreateRequest
+import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.common.ErrorResponse
+import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -20,12 +19,46 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class JournalViewModel : ViewModel() {
+    fun listDiaries(
+        pageNumber: Int,
+        onSuccess: (List<DiaryResponse>) -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        MollaApp.instance.userId?.let {
+            val call = ApiClient.apiService.listDiaries(it, pageNumber, 20)
+            viewModelScope.launch {
+                call.enqueue(object : Callback<StandardResponse<PageResponse<DiaryResponse>>> {
+                    override fun onResponse(
+                        call: Call<StandardResponse<PageResponse<DiaryResponse>>>,
+                        response: Response<StandardResponse<PageResponse<DiaryResponse>>>
+                    ) {
+                        if (response.isSuccessful) {
+                            response.body()?.data?.content?.let { diaries ->
+                                onSuccess(diaries)
+                            } ?: onError("No data in response")
+                            return
+                        }
+
+                        handleErrorResponse(response, onError)
+                    }
+
+                    override fun onFailure(
+                        call: Call<StandardResponse<PageResponse<DiaryResponse>>>,
+                        t: Throwable
+                    ) {
+                        onError(t.message ?: "Network Error")
+                    }
+                })
+            }
+        }
+    }
+
     fun writeDiary(
         title: String,
         content: String,
-        images: List<Uri>,
+        images: List<Pair<String, ByteArray>>,
         onSuccess: (Long) -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         val diaryCreateRequestBody = Gson().toJson(
             DiaryCreateRequest(
@@ -35,38 +68,23 @@ class JournalViewModel : ViewModel() {
             )
         ).toRequestBody("application/json".toMediaTypeOrNull())
 
+        val call = if (images.isEmpty()) {
+            ApiClient.apiService.saveDiary(diaryCreateRequestBody)
+        } else {
+            val imageParts = getImageParts(images)
+            ApiClient.apiService.saveDiary(diaryCreateRequestBody, imageParts)
+        }
+
         viewModelScope.launch {
-            val call = if (images.isEmpty()) {
-                ApiClient.apiService.saveDiary(diaryCreateRequestBody)
-            } else {
-                val imageParts = mutableListOf<MultipartBody.Part>()
-                val contentResolver = MollaApp.instance.contentResolver
-
-                for (uri in images) {
-                    val inputStream = contentResolver.openInputStream(uri)
-                    val bytes = inputStream?.readBytes()
-                    val requestFile = bytes?.toRequestBody("multipart/form-data".toMediaTypeOrNull())
-                    val fileName = getFileNameFromUri(contentResolver, uri)
-                    val part = requestFile?.let {
-                        MultipartBody.Part.createFormData("images", fileName, it)
-                    }
-                    part?.let {
-                        imageParts.add(it)
-                    }
-                }
-
-                ApiClient.apiService.saveDiary(diaryCreateRequestBody, imageParts)
-            }
             call.enqueue(object : Callback<StandardResponse<Long>> {
                 override fun onResponse(
                     call: Call<StandardResponse<Long>>,
                     response: Response<StandardResponse<Long>>
                 ) {
-                    if (response.isSuccessful && response.body() != null) {
-                        val successResponse = response.body()
-                        successResponse?.data?.let { diaryId ->
+                    if (response.isSuccessful) {
+                        response.body()?.data?.let { diaryId ->
                             onSuccess(diaryId)
-                        }
+                        } ?: onError("No data in response")
                         return
                     }
 
@@ -83,11 +101,105 @@ class JournalViewModel : ViewModel() {
         }
     }
 
-    fun listDiaries() {
+    fun updateDiary(
+        diaryId: Long,
+        title: String,
+        content: String,
+        updateImages: List<Pair<String, ByteArray>>,
+        deleteImageIds: List<Long>,
+        onSuccess: (Long) -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        val diaryUpdateRequestBody = Gson().toJson(
+            DiaryCreateRequest(
+                title = title,
+                content = content,
+                userId = MollaApp.instance.userId.toString(),
+            )
+        ).toRequestBody("application/json".toMediaTypeOrNull())
 
+        val deleteImageIdsRequestBody = Gson().toJson(deleteImageIds)
+            .toRequestBody("application/json".toMediaTypeOrNull())
+
+        val updateImageParts = getImageParts(updateImages)
+        val call = ApiClient.apiService.updateDiary(
+            diaryId,
+            diaryUpdateRequestBody,
+            updateImageParts,
+            deleteImageIdsRequestBody
+        )
+
+        viewModelScope.launch {
+            call.enqueue(object : Callback<StandardResponse<Long>> {
+                override fun onResponse(
+                    call: Call<StandardResponse<Long>>,
+                    response: Response<StandardResponse<Long>>
+                ) {
+                    if (response.isSuccessful) {
+                        response.body()?.data?.let { diaryId ->
+                            onSuccess(diaryId)
+                        } ?: onError("No data in response")
+                        return
+                    }
+
+                    handleErrorResponse(response, onError)
+                }
+
+                override fun onFailure(
+                    call: Call<StandardResponse<Long>>,
+                    t: Throwable
+                ) {
+                    onError(t.message ?: "Network Error")
+                }
+            })
+        }
     }
 
-    private fun handleErrorResponse(response: Response<StandardResponse<Long>>, onError: (String) -> Unit) {
+    fun deleteDiary(
+        diaryId: Long,
+        onSuccess: (Long) -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        val call = ApiClient.apiService.deleteDiary(diaryId)
+        viewModelScope.launch {
+            call.enqueue(object : Callback<StandardResponse<Long>> {
+                override fun onResponse(
+                    call: Call<StandardResponse<Long>>,
+                    response: Response<StandardResponse<Long>>
+                ) {
+                    if (response.isSuccessful) {
+                        response.body()?.data?.let { diaryId ->
+                            onSuccess(diaryId)
+                        } ?: onError("No data in response")
+                        return
+                    }
+
+                    handleErrorResponse(response, onError)
+                }
+
+                override fun onFailure(
+                    call: Call<StandardResponse<Long>>,
+                    t: Throwable
+                ) {
+                    onError(t.message ?: "Network Error")
+                }
+            })
+        }
+    }
+
+    private fun getImageParts(images: List<Pair<String, ByteArray>>): List<MultipartBody.Part> {
+        val imageParts = mutableListOf<MultipartBody.Part>()
+
+        for (bytes in images) {
+            val requestFile = bytes.first.toRequestBody("multipart/form-data".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("images", bytes.first, requestFile)
+            imageParts.add(part)
+        }
+
+        return imageParts
+    }
+
+    private fun<T> handleErrorResponse(response: Response<StandardResponse<T>>, onError: (String) -> Unit) {
         val errorBody = response.errorBody()?.toString()
         errorBody?.let {
             try {
@@ -108,19 +220,5 @@ class JournalViewModel : ViewModel() {
         } ?: run {
             onError("Unknown Error")
         }
-    }
-
-    private fun getFileNameFromUri(contentResolver: ContentResolver, uri: Uri): String? {
-        var name: String? = null
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex != -1) {
-                    name = it.getString(nameIndex)
-                }
-            }
-        }
-        return name
     }
 }

@@ -44,10 +44,12 @@ fun NavigationStack() {
         }
         composable(
             "${Screen.Main.name}?actionIndex={actionIndex}",
-            arguments = listOf(navArgument("actionIndex") {
-                defaultValue = 0
-                type = NavType.IntType
-            })
+            arguments = listOf(
+                navArgument("actionIndex") {
+                    defaultValue = 0
+                    type = NavType.IntType
+                }
+            )
         ) { navBackStackEntry ->
             val actionIndex = navBackStackEntry.arguments?.getInt("actionIndex")
             actionIndex?.let {
@@ -55,11 +57,20 @@ fun NavigationStack() {
             }
         }
         composable(
-            Screen.WriteJournal.name,
+            "${Screen.WriteJournal.name}?updateJournalJson={updateJournalJson}",
+            arguments = listOf(
+                navArgument("updateJournalJson") {
+                    defaultValue = "{}"
+                    type = NavType.StringType
+                }
+            ),
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) },
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) }
-        ) {
-            WriteJournalPage(navController)
+        ) { navBackStackEntry ->
+            val updateJournalJson = navBackStackEntry.arguments?.getString("updateJournalJson")
+            updateJournalJson?.let {
+                WriteJournalPage(navController, it)
+            }
         }
         composable(
             Screen.WriteFeed.name,
