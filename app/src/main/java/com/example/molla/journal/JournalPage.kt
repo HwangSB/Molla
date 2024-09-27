@@ -1,10 +1,10 @@
 package com.example.molla.journal
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
@@ -30,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,8 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,9 +46,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.molla.common.DraggableBox
 import com.example.molla.common.LabeledHorizontalDivider
 import com.example.molla.R
+import com.example.molla.api.dto.response.DiaryResponse
+import com.example.molla.common.AdaptiveImageCard
+import com.example.molla.config.Screen
 import com.example.molla.ui.theme.ActionDelete
 import com.example.molla.ui.theme.ActionEdit
 import com.example.molla.ui.theme.EmotionAngry
@@ -58,12 +61,53 @@ import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
+import com.example.molla.utils.convertBase64ToImageBitmap
+import com.example.molla.utils.parseDateToMonthDay
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 @Composable
-fun JournalPage(modifier: Modifier, isDashboardOpened: Boolean) {
-    // TODO: Load journal data from server
+fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpened: Boolean) {
+    var journals by rememberSaveable { mutableStateOf(listOf<DiaryResponse>()) }
+
+    journals = listOf(
+//        DiaryResponse(
+//            diaryId = 1,
+//            title = "오늘의 일기",
+//            content = "오늘은 좋은 날이었어요!",
+//            diaryEmotion = "HAPPY",
+//            createDate = "2024-07-26",
+//            images = listOf()
+//        ),
+//        DiaryResponse(
+//            diaryId = 2,
+//            title = "어제의 일기",
+//            content = "어제는 힘든 하루였어요...",
+//            diaryEmotion = "SAD",
+//            createDate = "2024-07-25",
+//            images = listOf()
+//        ),
+//        DiaryResponse(
+//            diaryId = 3,
+//            title = "저번달의 일기",
+//            content = "저번달에는 무슨 일이 있었더라...",
+//            diaryEmotion = "ANGRY",
+//            createDate = "2024-06-24",
+//            images = listOf()
+//        )
+    )
+
     val journalViewModel: JournalViewModel = viewModel()
-    journalViewModel.listDiaries()
+
+    LaunchedEffect(Unit) {
+        journalViewModel.listDiaries(
+            0,
+            onSuccess = {
+                journals += it
+            },
+            onError = { Log.d("JournalPage", it) }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -97,156 +141,125 @@ fun JournalPage(modifier: Modifier, isDashboardOpened: Boolean) {
                 }
             }
         }
-        item {
-            Text(
-                text = "2024년 7월",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            LabeledHorizontalDivider("25일")
-        }
-        items(1) { index ->
-            DraggableBox(
-                actionSize = 128.dp,
-                startAction = {
-                    Box(
-                        modifier = Modifier
-                            .size(84.dp)
-                            .align(Alignment.Center)
-                            .clip(RoundedCornerShape(84.dp))
-                            .background(ActionEdit)
-                            .clickable { /*TODO*/ },
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.edit_24px),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                },
-                endAction = {
-                    Box(
-                        modifier = Modifier
-                            .size(84.dp)
-                            .align(Alignment.Center)
-                            .clip(RoundedCornerShape(84.dp))
-                            .background(ActionDelete)
-                            .clickable { /*TODO*/ },
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.delete_24px),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                },
-            ) {
-                ExpandableCard(
-                    index,
-                    Journal(
-                        title = "Hello, Journal!",
-                        content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        images = listOf(
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                        ),
-                        emotionType = 0,
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
-            }
-        }
-        item {
-            LabeledHorizontalDivider("24일")
-        }
-        items(3) { index ->
-            DraggableBox(
-                actionSize = 128.dp,
-                startAction = {
-                    Box(
-                        modifier = Modifier
-                            .size(84.dp)
-                            .align(Alignment.Center)
-                            .clip(RoundedCornerShape(84.dp))
-                            .background(ActionEdit)
-                            .clickable { /*TODO*/ },
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.edit_24px),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                },
-                endAction = {
-                    Box(
-                        modifier = Modifier
-                            .size(84.dp)
-                            .align(Alignment.Center)
-                            .clip(RoundedCornerShape(84.dp))
-                            .background(ActionDelete)
-                            .clickable { /*TODO*/ },
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.delete_24px),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                },
-            ) {
-                ExpandableCard(
-                    index,
-                    Journal(
-                        title = "Hello, Journal Journal Journal Journal Journal Journal Journal Journal Journal Journal Journal $index!",
-                        content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        images = listOf(
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                            ImageBitmap.imageResource(R.drawable.login_naver),
-                            ImageBitmap.imageResource(R.drawable.login_naver)
-                        ),
-                        emotionType = 0,
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
-            }
-        }
+        itemsIndexed(journals) { index, journal ->
+            val parseDate = parseDateToMonthDay(journal.createDate).split(" ")
+            val year = parseDate[0]
+            val month = parseDate[1]
+            val day = parseDate[2]
 
+            val previousJournal = journals.getOrNull(index - 1)
+            val parsedPreviousJournalDate = if (previousJournal != null) {
+                parseDateToMonthDay(previousJournal.createDate).split(" ")[1]
+            } else {
+                ""
+            }
+            val isDifferentMonth = parsedPreviousJournalDate != month
+
+            if (previousJournal == null || isDifferentMonth) {
+                Text(
+                    text = "${year}년 ${month}월",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            LabeledHorizontalDivider("${day}일")
+            Spacer(modifier = Modifier.height(16.dp))
+            JournalDraggableBox(
+                onEdit = {
+                    val updateJournalJson = Json.encodeToString(journal)
+                    navController.navigate("${Screen.WriteJournal.name}?updateJournalJson=$updateJournalJson")
+                },
+                onDelete = {
+                    journalViewModel.deleteDiary(
+                        journal.diaryId,
+                        onSuccess = {
+                            journals -= journal
+                        },
+                        onError = { Log.e("JournalPage", it) }
+                    )
+                }
+            ) {
+                ExpandableCard(journal)
+            }
+        }
         // Bottom padding for the last item
         item { Spacer(modifier = Modifier.height(0.dp)) }
     }
 }
 
-data class Journal(
-    val title: String,
-    val content: String,
-    val images: List<ImageBitmap>,
-    val emotionType: Int,
-    val timestamp: Long
-)
+@Composable
+fun JournalDraggableBox(
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit)
+{
+    DraggableBox(
+        actionSize = 128.dp,
+        startAction = {
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(84.dp))
+                    .background(ActionEdit)
+                    .clickable(onClick = onEdit)
+            ) {
+                Icon(
+                    painterResource(R.drawable.edit_24px),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        },
+        endAction = {
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(84.dp))
+                    .background(ActionDelete)
+                    .clickable(onClick = onDelete),
+            ) {
+                Icon(
+                    painterResource(R.drawable.delete_24px),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        },
+    ) {
+        content()
+    }
+}
 
 @Composable
-fun ExpandableCard(index: Int, journal: Journal) {
+fun ExpandableCard(journal: DiaryResponse) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val emotionColor = if (journal.diaryEmotion != null) {
+        when (journal.diaryEmotion) {
+            "ANGRY" -> EmotionAngry
+            "INSECURE" -> EmotionInsecure
+            "SAD" -> EmotionSad
+            "HURT" -> EmotionHurt
+            "HAPPY" -> EmotionHappy
+            else -> Color.Gray
+        }
+    } else {
+        Color.Gray
+    }
 
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 100.dp)
             .animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -259,6 +272,7 @@ fun ExpandableCard(index: Int, journal: Journal) {
                 Text(
                     text = journal.title,
                     style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .weight(1f),
@@ -269,12 +283,12 @@ fun ExpandableCard(index: Int, journal: Journal) {
                     .padding(horizontal = 16.dp)
                     .width(16.dp)
                     .height(16.dp)
-                    .background(EmotionAngry, RoundedCornerShape(8.dp))
+                    .background(emotionColor, RoundedCornerShape(8.dp))
                     .align(Alignment.CenterVertically)
                 )
             }
             AdaptiveImageCard(
-                images = journal.images
+                images = journal.images.map { convertBase64ToImageBitmap(it.base64EncodedImage) }
             )
             Text(
                 text = journal.content,
@@ -284,51 +298,6 @@ fun ExpandableCard(index: Int, journal: Journal) {
                 overflow = if (!expanded) { TextOverflow.Ellipsis } else { TextOverflow.Clip },
             )
             Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-fun AdaptiveImageCard(images: List<ImageBitmap>) {
-    when (images.size) {
-        0 -> {
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        1, 2 -> {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .padding(vertical = 16.dp)
-            ) {
-                for (image in images) {
-                    Image(
-                        bitmap = image,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-                }
-            }
-        }
-        else -> {
-            LazyRow(
-                modifier = Modifier
-                    .height(120.dp)
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                itemsIndexed(images) { _, image ->
-                    Image(
-                        bitmap = images[1],
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(120.dp)
-                    )
-                }
-            }
         }
     }
 }
@@ -437,5 +406,6 @@ fun EmotionBarChart(status: String, caution: String, angry: Int, insecure: Int, 
 @Preview(showBackground = true)
 @Composable
 fun JournalPagePreview() {
-    JournalPage(Modifier, true)
+    val navController = rememberNavController()
+    JournalPage(navController, Modifier, isDashboardOpened = true)
 }
