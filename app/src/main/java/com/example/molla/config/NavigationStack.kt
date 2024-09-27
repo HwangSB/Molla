@@ -12,7 +12,7 @@ import androidx.navigation.navArgument
 import com.example.molla.MainPage
 import com.example.molla.analysis.LoadAnalysisPage
 import com.example.molla.counsel.CounselPageContent
-import com.example.molla.forum.Feed
+import com.example.molla.forum.dto.Feed
 import com.example.molla.forum.ForumPage
 import com.example.molla.forum.PostDetailActivityContent
 import com.example.molla.forum.WriteFeedPage
