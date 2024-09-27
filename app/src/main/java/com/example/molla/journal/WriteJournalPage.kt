@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +75,7 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
     var isEdit = false
     var diaryId = 0L
     var previousImageIds = emptyList<Long>()
+
     updateJournalJson?.let { journalJson ->
         if (journalJson == "{}") return@let
 
@@ -160,7 +162,10 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
                         Box(
                             modifier = Modifier
                                 .size(100.dp)
-                                .background(color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(8.dp))
+                                .background(
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {

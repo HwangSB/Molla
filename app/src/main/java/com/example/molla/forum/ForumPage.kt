@@ -1,5 +1,6 @@
 package com.example.molla.forum
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,12 +18,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -35,33 +38,55 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.molla.R
 import com.example.molla.config.Screen
+import com.example.molla.forum.dto.Feed
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-@Serializable
-data class Feed(
-    val feedId: Int,
-    val title: String,
-    val content: String,
-    val commentCount: Int,
-    val emotionType: Int,
-    val emotionCount: Int,
-    val writer: String,
-    val timestamp: Long,
-)
+
 
 @Composable
-fun ForumPage(navController: NavController, modifier: Modifier) {
+fun ForumPage(
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    viewModel: ForumListViewModel = ForumListViewModel()
+) {
+
+    // `navController`의 `refreshNeeded` 상태를 `remember`로 관리
+    val refreshFlag = remember {
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("refreshNeeded")
+    }?.observeAsState()
+
+    // 현재 플래그 값이 null인지 확인하고 안전하게 사용
+    val refreshNeeded = refreshFlag?.value ?: false
+
+    // 플래그가 true일 때만 새로고침을 수행하고, 플래그를 false로 변경하여 중복 요청 방지
+    LaunchedEffect(refreshNeeded) {
+        if (refreshNeeded) {
+            viewModel.refreshPagingData()
+            navController.currentBackStackEntry?.savedStateHandle?.set("refreshNeeded", false)
+        }
+    }
+
+    val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -87,24 +112,63 @@ fun ForumPage(navController: NavController, modifier: Modifier) {
                 )
             }
         }
-        items(5) { index ->
-            val feed = Feed(
-                feedId = index,
-                title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal $index!",
-                content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                commentCount = 0,
-                emotionType = 0,
-                emotionCount = 3,
-                writer = "작성자",
-                timestamp = System.currentTimeMillis(),
-            )
-            ForumCard(
-                feed = feed,
-                onClick = {
-                    val feedString = Json.encodeToString(feed)
-                    navController.navigate("${Screen.DetailedFeed.name}/$feedString")
+//        items(5) { index ->
+//            val feed = Feed(
+//                feedId = index,
+//                title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal $index!",
+//                content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+//                commentCount = 0,
+//                emotionType = 0,
+//                emotionCount = 3,
+//                writer = "작성자",
+//                timestamp = System.currentTimeMillis(),
+//            )
+//            ForumCard(
+//                feed = feed,
+//                onClick = {
+//                    val feedString = Json.encodeToString(feed)
+//                    navController.navigate("${Screen.DetailedFeed.name}/$feedString")
+//                }
+//            )
+//        }
+        Log.d("가져온 개수", pagingData.itemCount.toString())
+        items(pagingData.itemCount) { index ->
+            val feedItem = pagingData[index]
+            feedItem?.let { feed ->
+                ForumCard(
+                    feed = Feed(
+                        feedId = feed.postId.toInt(),
+                        title = feed.title,
+                        content = feed.content,
+                        commentCount = feed.commentCount.toInt(),
+                        emotionType = viewModel.getEmotionType(feed.userEmotion),
+                        emotionCount = feed.userEmotionCount.toInt(),
+                        writer = feed.username,
+                        timestamp = viewModel.parseDateToMonthDay(feed.createDate)
+                    ),
+                    onClick = {
+                        // TODO
+                    }
+                )
+            }
+        }
+
+
+
+        pagingData.apply {
+            when {
+                loadState.refresh is LoadState.Loading -> {
+                    item { CircularProgressIndicator() }
                 }
-            )
+                loadState.append is LoadState.Loading -> {
+                    item { CircularProgressIndicator() }
+                }
+                loadState.append is LoadState.Error -> {
+                    item {
+                        Text("Error: ${(loadState.append as LoadState.Error).error.message}")
+                    }
+                }
+            }
         }
 
         // Bottom padding for the last item
@@ -134,7 +198,7 @@ fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "by ${feed.content}",
+                text = feed.content,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 16.dp),
                 maxLines = 3,
@@ -159,7 +223,7 @@ fun CommunicationTag(
     emotionType: Int,
     emotionCount: Int,
     writer: String,
-    timestamp: Long,
+    timestamp: String,
 ) {
     val emotionColor = when (emotionType) {
         0 -> EmotionAngry
@@ -169,7 +233,7 @@ fun CommunicationTag(
         4 -> EmotionHappy
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val simpleDateFormat = SimpleDateFormat("MM월 dd일", Locale.KOREA)
+    //val simpleDateFormat = SimpleDateFormat("MM월 dd일", Locale.KOREA)
 
     Row(modifier = Modifier.padding(16.dp)) {
         Image(
@@ -211,7 +275,7 @@ fun CommunicationTag(
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = simpleDateFormat.format(timestamp),
+            text = timestamp,
             style = MaterialTheme.typography.bodyMedium,
             fontSize = 12.sp
         )

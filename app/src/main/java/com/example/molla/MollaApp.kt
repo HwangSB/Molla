@@ -16,4 +16,8 @@ class MollaApp : Application() {
         super.onCreate()
         instance = this
     }
+
+    fun isLoggedIn(): Boolean {
+        return userId != null && username != null && email != null
+    }
 }

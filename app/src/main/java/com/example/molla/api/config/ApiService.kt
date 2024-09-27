@@ -1,14 +1,18 @@
 package com.example.molla.api.config
 
+import com.example.molla.api.dto.request.ForumCreateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.request.SignUpRequest
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.LoginSuccessResponse
+import com.example.molla.api.dto.response.ForumListResponse
 import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
+import com.example.molla.api.dto.response.common.UpdateResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -47,7 +51,7 @@ interface ApiService {
         @Part("diary") diaryUpdateRequest: RequestBody,
         @Part updateImages: List<MultipartBody.Part>,
         @Part("deleteImages") deleteImageIds: RequestBody
-    ): Call<StandardResponse<Long>>
+    ): Call<StandardResponse<UpdateResponse>>
 
     @DELETE("api/diary/{id}")
     fun deleteDiary(
@@ -62,4 +66,16 @@ interface ApiService {
 
     @POST("api/user/signup")
     fun signup(@Body request: SignUpRequest): Call<StandardResponse<Long>>
+
+    /**
+     * Forum
+     */
+    @POST("api/post/save")
+    fun saveForum(@Body request: ForumCreateRequest): Call<StandardResponse<Long>>
+
+    @GET("api/post/all")
+    suspend fun getForumList(
+        @Query("pageNumber") pageNumber: Int,
+        @Query("pageSize") pageSize: Int
+    ): Response<StandardResponse<PageResponse<ForumListResponse>>>
 }

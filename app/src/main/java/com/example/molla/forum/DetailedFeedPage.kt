@@ -55,6 +55,7 @@ import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.ui.theme.MollaTheme
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.example.molla.forum.dto.Feed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -251,7 +252,7 @@ fun PostDetailActivityPreview() {
         emotionType = 0,
         emotionCount = 3,
         writer = "박준힉",
-        timestamp = System.currentTimeMillis(),
+        timestamp = System.currentTimeMillis().toString(),
     )
     PostDetailActivityContent(navController, feed)
 }

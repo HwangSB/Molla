@@ -57,6 +57,10 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.runtime.livedata)
+    val paging_version = "3.3.2"
+    implementation("androidx.paging:paging-runtime:$paging_version")
+    implementation("androidx.paging:paging-compose:3.3.2")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

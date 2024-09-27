@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,12 +27,17 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.common.TitleAndContentInput
 import com.example.molla.ui.theme.MollaTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.molla.MollaApp
+import com.example.molla.config.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WriteFeedPage(navController: NavController) {
+fun WriteFeedPage(navController: NavController, viewModel: WriteForumViewModel = viewModel()) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var showErrorMessage by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     MollaTheme {
         Scaffold(
@@ -46,7 +52,38 @@ fun WriteFeedPage(navController: NavController) {
                         }
                     },
                     actions = {
-                        TextButton(onClick = { /*TODO*/ }) {
+                        TextButton(
+                            onClick = {
+                                val error = viewModel.validateInput(title, content)
+                                if (error == null) {
+                                    viewModel.saveForum(
+                                        title = title,
+                                        content = content,
+                                        userId = MollaApp.instance.userId.toString(),
+                                        onSuccess = {
+                                            // 이동하기 전에 `refreshNeeded` 플래그 설정
+                                            navController.previousBackStackEntry?.savedStateHandle?.set("refreshNeeded", true)
+
+                                            // 게시글 목록 페이지로 이동
+                                            navController.navigate("${Screen.Main.name}?actionIndex=1") {
+                                                // 기존 스택을 유지하지 않고, root로 돌아가도록 설정
+                                                popUpTo(navController.graph.startDestinationId) {
+                                                    inclusive = true // 스택에서 기존 페이지를 제거
+                                                }
+                                                launchSingleTop = true // 페이지 중복 생성 방지
+                                            }
+                                        },
+                                        onError = { errorMessage ->
+                                            validationError = errorMessage
+                                            showErrorMessage = true
+                                        }
+                                    )
+                                } else {
+                                    validationError = error
+                                    showErrorMessage = true
+                                }
+                            }
+                        ) {
                             Text(
                                 text = "등록",
                                 style = TextStyle(
@@ -71,6 +108,19 @@ fun WriteFeedPage(navController: NavController) {
                     onContentChange = { content = it }
                 )
             }
+        }
+
+        if (showErrorMessage) {
+            AlertDialog(
+                onDismissRequest = { showErrorMessage = false },
+                title = { Text(text = "입력 오류") },
+                text = { Text(text = validationError ?: "") },
+                confirmButton = {
+                    TextButton(onClick = { showErrorMessage = false }) {
+                        Text("확인")
+                    }
+                }
+            )
         }
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,6 +62,7 @@ import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.utils.convertBase64ToImageBitmap
+import com.example.molla.utils.parseDateToMonthDay
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -69,40 +71,43 @@ fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpe
     var journals by rememberSaveable { mutableStateOf(listOf<DiaryResponse>()) }
 
     journals = listOf(
-        DiaryResponse(
-            diaryId = 1,
-            title = "오늘의 일기",
-            content = "오늘은 좋은 날이었어요!",
-            diaryEmotion = "HAPPY",
-            createDate = "2024-07-26",
-            images = listOf()
-        ),
-        DiaryResponse(
-            diaryId = 2,
-            title = "어제의 일기",
-            content = "어제는 힘든 하루였어요...",
-            diaryEmotion = "SAD",
-            createDate = "2024-07-25",
-            images = listOf()
-        ),
-        DiaryResponse(
-            diaryId = 3,
-            title = "저번달의 일기",
-            content = "저번달에는 무슨 일이 있었더라...",
-            diaryEmotion = "ANGRY",
-            createDate = "2024-06-24",
-            images = listOf()
-        )
+//        DiaryResponse(
+//            diaryId = 1,
+//            title = "오늘의 일기",
+//            content = "오늘은 좋은 날이었어요!",
+//            diaryEmotion = "HAPPY",
+//            createDate = "2024-07-26",
+//            images = listOf()
+//        ),
+//        DiaryResponse(
+//            diaryId = 2,
+//            title = "어제의 일기",
+//            content = "어제는 힘든 하루였어요...",
+//            diaryEmotion = "SAD",
+//            createDate = "2024-07-25",
+//            images = listOf()
+//        ),
+//        DiaryResponse(
+//            diaryId = 3,
+//            title = "저번달의 일기",
+//            content = "저번달에는 무슨 일이 있었더라...",
+//            diaryEmotion = "ANGRY",
+//            createDate = "2024-06-24",
+//            images = listOf()
+//        )
     )
 
     val journalViewModel: JournalViewModel = viewModel()
-    journalViewModel.listDiaries(
-        0,
-        onSuccess = {
-            journals += it
-        },
-        onError = { Log.d("JournalPage", it) }
-    )
+
+    LaunchedEffect(Unit) {
+        journalViewModel.listDiaries(
+            0,
+            onSuccess = {
+                journals += it
+            },
+            onError = { Log.d("JournalPage", it) }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -137,12 +142,18 @@ fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpe
             }
         }
         itemsIndexed(journals) { index, journal ->
-            val year = journal.createDate.split("-")[0].toInt()
-            val month = journal.createDate.split("-")[1].toInt()
-            val day = journal.createDate.split("-")[2].toInt()
+            val parseDate = parseDateToMonthDay(journal.createDate).split(" ")
+            val year = parseDate[0]
+            val month = parseDate[1]
+            val day = parseDate[2]
 
             val previousJournal = journals.getOrNull(index - 1)
-            val isDifferentMonth = previousJournal?.createDate?.split("-")?.get(1)?.toInt() != month
+            val parsedPreviousJournalDate = if (previousJournal != null) {
+                parseDateToMonthDay(previousJournal.createDate).split(" ")[1]
+            } else {
+                ""
+            }
+            val isDifferentMonth = parsedPreviousJournalDate != month
 
             if (previousJournal == null || isDifferentMonth) {
                 Text(
@@ -232,13 +243,17 @@ fun JournalDraggableBox(
 @Composable
 fun ExpandableCard(journal: DiaryResponse) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val emotionColor = when (journal.diaryEmotion) {
-        "ANGRY" -> EmotionAngry
-        "INSECURE" -> EmotionInsecure
-        "SAD" -> EmotionSad
-        "HURT" -> EmotionHurt
-        "HAPPY" -> EmotionHappy
-        else -> Color.Gray
+    val emotionColor = if (journal.diaryEmotion != null) {
+        when (journal.diaryEmotion) {
+            "ANGRY" -> EmotionAngry
+            "INSECURE" -> EmotionInsecure
+            "SAD" -> EmotionSad
+            "HURT" -> EmotionHurt
+            "HAPPY" -> EmotionHappy
+            else -> Color.Gray
+        }
+    } else {
+        Color.Gray
     }
 
     OutlinedCard(

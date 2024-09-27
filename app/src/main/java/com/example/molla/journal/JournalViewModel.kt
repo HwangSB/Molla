@@ -1,5 +1,6 @@
 package com.example.molla.journal
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.molla.MollaApp
@@ -9,6 +10,7 @@ import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.common.ErrorResponse
 import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
+import com.example.molla.api.dto.response.common.UpdateResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -17,6 +19,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class JournalViewModel : ViewModel() {
     fun listDiaries(
@@ -71,7 +75,7 @@ class JournalViewModel : ViewModel() {
         val call = if (images.isEmpty()) {
             ApiClient.apiService.saveDiary(diaryCreateRequestBody)
         } else {
-            val imageParts = getImageParts(images)
+            val imageParts = getImageParts("images", images)
             ApiClient.apiService.saveDiary(diaryCreateRequestBody, imageParts)
         }
 
@@ -120,8 +124,8 @@ class JournalViewModel : ViewModel() {
 
         val deleteImageIdsRequestBody = Gson().toJson(deleteImageIds)
             .toRequestBody("application/json".toMediaTypeOrNull())
+        val updateImageParts = getImageParts("updateImages", updateImages)
 
-        val updateImageParts = getImageParts(updateImages)
         val call = ApiClient.apiService.updateDiary(
             diaryId,
             diaryUpdateRequestBody,
@@ -130,14 +134,14 @@ class JournalViewModel : ViewModel() {
         )
 
         viewModelScope.launch {
-            call.enqueue(object : Callback<StandardResponse<Long>> {
+            call.enqueue(object : Callback<StandardResponse<UpdateResponse>> {
                 override fun onResponse(
-                    call: Call<StandardResponse<Long>>,
-                    response: Response<StandardResponse<Long>>
+                    call: Call<StandardResponse<UpdateResponse>>,
+                    response: Response<StandardResponse<UpdateResponse>>
                 ) {
                     if (response.isSuccessful) {
-                        response.body()?.data?.let { diaryId ->
-                            onSuccess(diaryId)
+                        response.body()?.data?.let { updateResponse ->
+                            onSuccess(updateResponse.id)
                         } ?: onError("No data in response")
                         return
                     }
@@ -146,7 +150,7 @@ class JournalViewModel : ViewModel() {
                 }
 
                 override fun onFailure(
-                    call: Call<StandardResponse<Long>>,
+                    call: Call<StandardResponse<UpdateResponse>>,
                     t: Throwable
                 ) {
                     onError(t.message ?: "Network Error")
@@ -187,12 +191,12 @@ class JournalViewModel : ViewModel() {
         }
     }
 
-    private fun getImageParts(images: List<Pair<String, ByteArray>>): List<MultipartBody.Part> {
+    private fun getImageParts(name: String, images: List<Pair<String, ByteArray>>): List<MultipartBody.Part> {
         val imageParts = mutableListOf<MultipartBody.Part>()
 
         for (bytes in images) {
-            val requestFile = bytes.first.toRequestBody("multipart/form-data".toMediaTypeOrNull())
-            val part = MultipartBody.Part.createFormData("images", bytes.first, requestFile)
+            val requestFile = bytes.second.toRequestBody("multipart/form-data".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData(name, bytes.first, requestFile)
             imageParts.add(part)
         }
 
