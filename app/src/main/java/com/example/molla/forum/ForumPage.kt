@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,25 +42,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.molla.R
-import com.example.molla.config.Screen
 import com.example.molla.forum.dto.Feed
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Locale
-
 
 
 @Composable
@@ -68,32 +56,16 @@ fun ForumPage(
     modifier: Modifier = Modifier,
     viewModel: ForumListViewModel = ForumListViewModel()
 ) {
-    // ViewModel에서 수집한 PagingData를 LazyPagingItems로 가져옴
+    val listState = rememberLazyListState()
     val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
-
-    // 새로고침 플래그가 true일 경우에만 새로고침 수행
-    val refreshNeeded = navController
-        .currentBackStackEntry
-        ?.savedStateHandle
-        ?.getLiveData<Boolean>("refreshNeeded")
-        ?.observeAsState()
-
-    // refreshNeeded가 true일 경우에만 refresh 호출
-    LaunchedEffect(refreshNeeded?.value) {
-        if (refreshNeeded?.value == true) {
-            pagingData.refresh()
-            navController.currentBackStackEntry?.savedStateHandle?.set("refreshNeeded", false)
-        }
-    }
-
-    //val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .then(modifier),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState
     ) {
         item {
             Box(
@@ -113,26 +85,7 @@ fun ForumPage(
                 )
             }
         }
-//        items(5) { index ->
-//            val feed = Feed(
-//                feedId = index,
-//                title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal $index!",
-//                content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-//                commentCount = 0,
-//                emotionType = 0,
-//                emotionCount = 3,
-//                writer = "작성자",
-//                timestamp = System.currentTimeMillis(),
-//            )
-//            ForumCard(
-//                feed = feed,
-//                onClick = {
-//                    val feedString = Json.encodeToString(feed)
-//                    navController.navigate("${Screen.DetailedFeed.name}/$feedString")
-//                }
-//            )
-//        }
-        Log.d("가져온 개수", pagingData.itemCount.toString())
+
         items(pagingData.itemCount) { index ->
             val feedItem = pagingData[index]
             feedItem?.let { feed ->
@@ -154,20 +107,22 @@ fun ForumPage(
             }
         }
 
-
-
         pagingData.apply {
             when {
-                loadState.refresh is LoadState.Loading && itemCount == 0 -> {
-                    // 초기 로딩 상태일 때 CircularProgressIndicator 표시
-                    item { CircularProgressIndicator(modifier = Modifier.fillMaxSize()) }
+                loadState.refresh is LoadState.Loading -> {
+                    Log.d("ForumPage", "Refresh Loading")
+                }
+                loadState.refresh is LoadState.Error -> {
+                    Log.d("ForumPage", "Refresh Error")
+                    item {
+                        Text("Error: ${(loadState.append as LoadState.Error).error.message}")
+                    }
                 }
                 loadState.append is LoadState.Loading -> {
-                    // 추가 페이지 로딩 중
-                    item { CircularProgressIndicator() }
+                    Log.d("ForumPage", "Append Loading")
                 }
                 loadState.append is LoadState.Error -> {
-                    // 로딩 에러 발생 시 에러 메시지 표시
+                    Log.d("ForumPage", "Append Error")
                     item {
                         Text("Error: ${(loadState.append as LoadState.Error).error.message}")
                     }

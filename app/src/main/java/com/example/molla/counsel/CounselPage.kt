@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.common.ChatBubble
@@ -60,7 +61,11 @@ fun CounselPageContent(navController: NavController) {
         ) { innerPadding ->
             Column (
                 modifier = Modifier
-                    .padding(innerPadding)
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                        top = innerPadding.calculateTopPadding(),
+                    )
                     .fillMaxSize()
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -101,6 +106,7 @@ fun CounselPageContent(navController: NavController) {
                         .padding(8.dp)
                 )
                 ChatInputSection(
+                    innerPadding = innerPadding,
                     userInput = userInput,
                     onUserInputChange = { userInput = it },
                     onSendMessage = {

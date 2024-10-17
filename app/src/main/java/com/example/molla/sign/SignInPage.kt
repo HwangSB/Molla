@@ -44,8 +44,8 @@ import com.example.molla.config.Screen
 
 @Composable
 fun SignInPage(navController: NavController, signInViewModel: SignInViewModel = viewModel()) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("a@a.com") }
+    var password by remember { mutableStateOf("a") }
     var errorMessage by remember { mutableStateOf("") }
 
     Box(modifier = Modifier

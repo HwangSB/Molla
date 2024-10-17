@@ -2,6 +2,7 @@ package com.example.molla.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import com.example.molla.R
 
 @Composable
 fun ChatInputSection(
+    innerPadding: PaddingValues = PaddingValues(0.dp),
     userInput: String,
     onUserInputChange: (String) -> Unit,
     onSendMessage: () -> Unit
@@ -34,6 +36,9 @@ fun ChatInputSection(
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(8.dp)
+            .padding(
+                bottom = innerPadding.calculateBottomPadding(),
+            )
     ) {
         Row(
             modifier = Modifier

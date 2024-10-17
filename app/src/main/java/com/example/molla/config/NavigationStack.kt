@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.molla.MainPage
+import com.example.molla.analysis.AnalysisPage
 import com.example.molla.analysis.LoadAnalysisPage
 import com.example.molla.counsel.CounselPageContent
 import com.example.molla.forum.dto.Feed
@@ -29,6 +30,7 @@ enum class Screen {
     WriteFeed,
     DetailedFeed,
     LoadAnalysis,
+    Analysis,
     Counsel,
     Forum
 }
@@ -57,9 +59,6 @@ fun NavigationStack() {
             actionIndex?.let {
                 MainPage(navController, it)
             }
-        }
-        composable(Screen.Forum.name) {
-            ForumPage(navController)
         }
         composable(
             "${Screen.WriteJournal.name}?updateJournalJson={updateJournalJson}",
@@ -99,6 +98,23 @@ fun NavigationStack() {
             exitTransition = { fadeOut() }
         ) {
             LoadAnalysisPage(navController)
+        }
+        composable(
+            "${Screen.Analysis.name}?analysisResult={analysisResult}",
+            arguments = listOf(
+                navArgument("analysisResult") {
+                    defaultValue = 5
+                    type = NavType.IntType
+                }
+            ),
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) { navBackStackEntry ->
+            val analysisResult = navBackStackEntry.arguments?.getInt("analysisResult")
+            println(analysisResult)
+            analysisResult?.let {
+                AnalysisPage(navController, it)
+            }
         }
         composable(
             Screen.Counsel.name,
