@@ -46,7 +46,9 @@ fun WriteFeedPage(navController: NavController, viewModel: WriteForumViewModel =
                     title = { Text("게시글 작성") },
                     navigationIcon = {
                         IconButton(onClick = {
-                            navController.popBackStack()
+                            navController.navigate("${Screen.Main.name}?actionIndex=1") {
+                                popUpTo(0)
+                            }
                         }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                         }
@@ -66,11 +68,7 @@ fun WriteFeedPage(navController: NavController, viewModel: WriteForumViewModel =
 
                                             // 게시글 목록 페이지로 이동
                                             navController.navigate("${Screen.Main.name}?actionIndex=1") {
-                                                // 기존 스택을 유지하지 않고, root로 돌아가도록 설정
-                                                popUpTo(navController.graph.startDestinationId) {
-                                                    inclusive = true // 스택에서 기존 페이지를 제거
-                                                }
-                                                launchSingleTop = true // 페이지 중복 생성 방지
+                                                popUpTo(0)
                                             }
                                         },
                                         onError = { errorMessage ->

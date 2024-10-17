@@ -11,6 +11,7 @@ import com.example.molla.api.dto.response.common.ErrorResponse
 import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import com.example.molla.api.dto.response.common.UpdateResponse
+import com.example.molla.websocket.config.WebSocketClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull

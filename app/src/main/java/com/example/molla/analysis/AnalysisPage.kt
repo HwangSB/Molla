@@ -1,5 +1,6 @@
 package com.example.molla.analysis
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,18 +14,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.molla.journal.DashboardCard
 import com.example.molla.journal.EmotionBarChart
 import com.example.molla.ui.theme.EmotionAngry
@@ -34,36 +50,11 @@ import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.ui.theme.MollaTheme
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalysisPageContent() {
-//    var isLoading by remember { mutableStateOf(true) }
-
-    MollaTheme {
-        Scaffold { innerPadding ->
-            AnalysisPage(modifier = Modifier.padding(innerPadding))
-//            AnimatedVisibility(
-//                visible = isLoading,
-//                enter = fadeIn(),
-//                exit = fadeOut()
-//            ) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .background(MaterialTheme.colorScheme.surface)
-//                ) {
-//                    LoadingPage(modifier = Modifier.padding(innerPadding))
-//                }
-//            }
-        }
-    }
-}
-
-@Composable
-fun AnalysisPage(modifier: Modifier) {
-    // TODO: Get analysis result from Server
-    val analysisResult = 1
-
-    val emotionText = when (analysisResult) {
+fun AnalysisPage(navController: NavController, emotion: Int) {
+    val emotionText = when (emotion) {
         0 -> "분노"
         1 -> "불안"
         2 -> "슬픔"
@@ -75,7 +66,7 @@ fun AnalysisPage(modifier: Modifier) {
     val brush = Brush.verticalGradient(
         colors = listOf(
             MaterialTheme.colorScheme.surface,
-            when (analysisResult) {
+            when (emotion) {
                 0 -> EmotionAngry
                 1 -> EmotionInsecure
                 2 -> EmotionSad
@@ -85,7 +76,7 @@ fun AnalysisPage(modifier: Modifier) {
             }
         )
     )
-    val contrastColor = when (analysisResult) {
+    val contrastColor = when (emotion) {
         0 -> MaterialTheme.colorScheme.onPrimary
         1 -> MaterialTheme.colorScheme.onSurface
         2 -> MaterialTheme.colorScheme.onPrimary
@@ -94,70 +85,90 @@ fun AnalysisPage(modifier: Modifier) {
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(brush)
-            .then(modifier)
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(128.dp))
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = emotionText,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(64.dp))
-            Text(
+    MollaTheme {
+        Scaffold {
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                text = "현재 불안한 감정을 느끼고 있으신 것 같아요.\n" +
-                        "불안함은 스트레스 호르몬인 코르티솔을 증가시키고,\n" +
-                        "뭐시기 뭐시기 해서 정신 건강에 좋지 않은 영향을 줄 수 있어요.\n\n" +
-                        "최근 일주일 사이에 불안한 감정이 무려 4번 나타났어요.\n\n" +
-                        "의학 머시기에 따르면 불안함 또는 우울한 감정이 한달 동안 2주 이상 지속될 경우 우울증으로 판단하고 있어요.\n\n" +
-                        "AI 상담사가 아래에 분석 리포트를 작성했으니 함께 확인해 보세요.",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                DashboardCard("내 감정 분포", "7일간 감정 상태 추이") {
-                    EmotionBarChart(
-                        status = "불안",
-                        caution = "주의가 필요합니다",
-                        angry = 2, insecure = 4,
-                        sad = 0, hurt = 0, happy = 1,
-                        modifier = Modifier.height(128.dp)
+                    .fillMaxSize()
+                    .background(brush)
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(128.dp))
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = emotionText,
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
                     )
+                    Spacer(modifier = Modifier.height(64.dp))
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp),
+                        text = "현재 불안한 감정을 느끼고 있으신 것 같아요.\n" +
+                                "불안함은 스트레스 호르몬인 코르티솔을 증가시키고,\n" +
+                                "뭐시기 뭐시기 해서 정신 건강에 좋지 않은 영향을 줄 수 있어요.\n\n" +
+                                "최근 일주일 사이에 불안한 감정이 무려 4번 나타났어요.\n\n" +
+                                "의학 머시기에 따르면 불안함 또는 우울한 감정이 한달 동안 2주 이상 지속될 경우 우울증으로 판단하고 있어요.\n\n" +
+                                "AI 상담사가 아래에 분석 리포트를 작성했으니 함께 확인해 보세요.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        DashboardCard("내 감정 분포", "7일간 감정 상태 추이") {
+                            EmotionBarChart(
+                                status = "불안",
+                                caution = "주의가 필요합니다",
+                                angry = 2, insecure = 4,
+                                sad = 0, hurt = 0, happy = 1,
+                                modifier = Modifier.height(128.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        DashboardCard("다른 사용자들의 주요 감정 분포", "7일간 감정 상태 추이") {
+                            ForumEmotionBarChart(
+                                angryUserMean = 4, angry = 2,
+                                insecureUserMean = 3, insecure = 4,
+                                sadUserMean = 0, sad = 0,
+                                hurtUserMean = 0, hurt = 0,
+                                happyUserMean = 0, happy = 1,
+                                modifier = Modifier.height(128.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Text(
+                            text = "홈으로 돌아가기",
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "MOLLA의 AI 상담사는 의학적 사실을 검증하지 않습니다. 사용에 주의가 필요합니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 8.sp,
+                        textAlign = TextAlign.Center,
+                        color = contrastColor.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                DashboardCard("다른 사용자들의 주요 감정 분포", "7일간 감정 상태 추이") {
-                    ForumEmotionBarChart(
-                        angryUserMean = 4, angry = 2,
-                        insecureUserMean = 3, insecure = 4,
-                        sadUserMean = 0, sad = 0,
-                        hurtUserMean = 0, hurt = 0,
-                        happyUserMean = 0, happy = 1,
-                        modifier = Modifier.height(128.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "MOLLA의 AI 상담사는 의학적 사실을 검증하지 않습니다. 사용에 주의가 필요합니다.",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 8.sp,
-                textAlign = TextAlign.Center,
-                color = contrastColor.copy(alpha = 0.6f)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -254,5 +265,6 @@ fun ForumEmotionBarChart(
 @Preview(showBackground = true)
 @Composable
 fun AnalysisPagePreview() {
-    AnalysisPageContent()
+    val navController = rememberNavController()
+    AnalysisPage(navController, 5)
 }

@@ -6,17 +6,8 @@ import androidx.paging.PagingState
 import com.example.molla.api.config.ApiClient
 import com.example.molla.api.dto.response.ForumListResponse
 
-class ForumPagingSource(private val isLoggedIn: Boolean) : PagingSource<Int, ForumListResponse>(){
-
+class ForumPagingSource : PagingSource<Int, ForumListResponse>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ForumListResponse> {
-        if (!isLoggedIn) {
-            return LoadResult.Page(
-                data = emptyList(),
-                prevKey = null,
-                nextKey = null
-            )
-        }
-
         val pageNumber = params.key ?: 0
         val pageSize = params.loadSize
         Log.d("PagingSource", "Requesting page $pageNumber with size $pageSize")
@@ -34,11 +25,7 @@ class ForumPagingSource(private val isLoggedIn: Boolean) : PagingSource<Int, For
                         nextKey = if (body.last) null else pageNumber + 1
                     )
                 } else {
-                    LoadResult.Page(
-                        data = emptyList(),
-                        prevKey = null,
-                        nextKey = null
-                    )
+                    LoadResult.Error(Exception("Error: No data in response"))
                 }
             } else {
                 LoadResult.Error(Exception("Error: ${response.code()}"))

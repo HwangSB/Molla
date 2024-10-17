@@ -31,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,7 +52,9 @@ import com.example.molla.common.TitleAndContentInput
 import com.example.molla.config.Screen
 import com.example.molla.ui.theme.MollaTheme
 import com.example.molla.utils.convertBase64ToByteArray
+import com.example.molla.websocket.config.WebSocketClient
 import kotlinx.serialization.json.Json
+import okhttp3.WebSocket
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +71,39 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
             newImage?.let {
                 val fileName = getFileNameFromUri(uri)
                 selectedImages = selectedImages + Pair(fileName, newImage)
+            }
+        }
+    }
+    var webSocket by remember { mutableStateOf<WebSocket?>(null) }
+    var emotionCode by remember { mutableIntStateOf(5) }
+    var navigateToAnalysis by remember { mutableStateOf(false) }
+
+    WebSocketClient(
+        onWebSocketCreated = { ws ->
+            webSocket = ws
+        },
+        onMessageReceived = { response ->
+            emotionCode = when (response.result) {
+                "ANGRY" -> 0
+                "SAD" -> 1
+                "ANXIOUS" -> 2
+                "HURT" -> 3
+                "HAPPY" -> 4
+                "NOTHING" -> 5
+                else -> 5
+            }
+            navigateToAnalysis = true
+//            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}") {
+//                popUpTo(Screen.Main.name)
+//            }
+//            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}")
+        },
+    )
+
+    LaunchedEffect(navigateToAnalysis) {
+        if (navigateToAnalysis) {
+            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}") {
+                popUpTo(Screen.Main.name)
             }
         }
     }
@@ -109,10 +145,11 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
                                         title = title,
                                         content = content,
                                         images = selectedImages,
-                                        onSuccess = {
-                                            navController.navigate(Screen.LoadAnalysis.name) {
-                                                popUpTo(Screen.Main.name)
-                                            }
+                                        onSuccess = { diaryId ->
+                                            webSocket?.send("{\"userId\": ${MollaApp.instance.userId}, \"targetId\": \"${diaryId}\", \"content\": \"${content}\", \"domain\": \"DIARY\"}")
+//                                            navController.navigate(Screen.LoadAnalysis.name) {
+//                                                popUpTo(Screen.Main.name)
+//                                            }
                                         },
                                         onError = { Log.e("WriteJournalPage:Write", it) }
                                     )
