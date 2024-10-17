@@ -12,15 +12,12 @@ import androidx.navigation.navArgument
 import com.example.molla.MainPage
 import com.example.molla.analysis.AnalysisPage
 import com.example.molla.analysis.LoadAnalysisPage
-import com.example.molla.counsel.CounselPageContent
-import com.example.molla.forum.dto.Feed
-import com.example.molla.forum.ForumPage
-import com.example.molla.forum.PostDetailActivityContent
+import com.example.molla.counsel.CounselPage
+import com.example.molla.forum.DetailedFeedPage
 import com.example.molla.forum.WriteFeedPage
 import com.example.molla.journal.WriteJournalPage
 import com.example.molla.sign.SignInPage
 import com.example.molla.sign.SignUpPage
-import kotlinx.serialization.json.Json
 
 enum class Screen {
     SignIn,
@@ -32,7 +29,6 @@ enum class Screen {
     LoadAnalysis,
     Analysis,
     Counsel,
-    Forum
 }
 
 @Composable
@@ -84,13 +80,15 @@ fun NavigationStack() {
             WriteFeedPage(navController)
         }
         composable(
-            "${Screen.DetailedFeed.name}/{feedJson}",
+            "${Screen.DetailedFeed.name}?detailedFeedJson={detailedFeedJson}",
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) }
-        ) { backStackEntry ->
-            val feedJson = backStackEntry.arguments?.getString("feedJson")
-            val feed = feedJson?.let { Json.decodeFromString<Feed>(it) }
-            PostDetailActivityContent(navController, feed!!)
+        ) { navBackStackEntry ->
+            val detailFeedJson = navBackStackEntry.arguments?.getString("detailedFeedJson")
+            detailFeedJson?.let {
+                DetailedFeedPage(navController, it)
+            }
+
         }
         composable(
             Screen.LoadAnalysis.name,
@@ -121,7 +119,7 @@ fun NavigationStack() {
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) }
         ) {
-            CounselPageContent(navController)
+            CounselPage(navController)
         }
     }
 }

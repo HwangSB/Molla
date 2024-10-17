@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.api.dto.response.ForumListResponse
 import com.example.molla.common.ChatBubble
 import com.example.molla.common.ChatInputSection
 import com.example.molla.common.ChatMessageUiModel
@@ -55,35 +57,11 @@ import com.example.molla.ui.theme.EmotionSad
 import com.example.molla.ui.theme.MollaTheme
 import java.text.SimpleDateFormat
 import java.util.Locale
-import com.example.molla.forum.dto.Feed
+import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostDetailActivityContent(navController: NavController, feed: Feed) {
-    val simpleDateFormat = SimpleDateFormat("M월 d일", Locale.KOREA)
-    val title = feed.title
-    val content = feed.content
-    val writer = feed.writer
-    val date = simpleDateFormat.format(feed.timestamp)
-
-    val scrolledTitle = if (title.length >= 6) title.substring(0, 6) + "..." else title
-    var appBarTitle by remember { mutableStateOf("") }
-    val expanded = remember { mutableStateOf(false) }
-
-    var userInput by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
-
-    var emotionCount = 3
-    val emotionType = 0
-    val emotionColor = when (emotionType) {
-        0 -> EmotionAngry
-        1 -> EmotionInsecure
-        2 -> EmotionSad
-        3 -> EmotionHurt
-        4 -> EmotionHappy
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
+fun DetailedFeedPage(navController: NavController, feed: String) {
     val chatMessageList = remember {
         mutableStateListOf(
             ChatMessageUiModel(
@@ -102,6 +80,27 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
             ChatMessageUiModel("이딴 글 왜 쓰는거임?", false, "8월 8일", "사용자3")
         )
     }
+
+    // TODO: 서버에서 받은 날짜로 파싱해야함
+    val simpleDateFormat = SimpleDateFormat("M월 d일", Locale.KOREA)
+    val listState = rememberLazyListState()
+
+    val parsedFeed = Gson().fromJson(feed, ForumListResponse::class.java)
+
+    val date = parsedFeed.createDate // simpleDateFormat.format(parsedFeed.createDate)
+    val emotionColor = when (parsedFeed.userEmotion) {
+        "ANGRY" -> EmotionAngry
+        "INSECURE" -> EmotionInsecure
+        "SAD" -> EmotionSad
+        "HURT" -> EmotionHurt
+        "HAPPY" -> EmotionHappy
+        else -> Color.Gray
+    }
+
+    val scrolledTitle = if (parsedFeed.title.length >= 6) parsedFeed.title.substring(0, 6) + "…" else parsedFeed.title
+    var appBarTitle by remember { mutableStateOf("") }
+    val expanded = remember { mutableStateOf(false) }
+    var userInput by remember { mutableStateOf("") }
 
     MollaTheme {
         Scaffold(
@@ -144,7 +143,7 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
                 ) {
                     item {
                         Text(
-                            text = title,
+                            text = parsedFeed.title,
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -163,7 +162,7 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
                                 .padding(horizontal = 12.dp)
                         ) {
                             Text(
-                                text = writer,
+                                text = parsedFeed.username,
                                 style = TextStyle(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
@@ -184,7 +183,7 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 LinearProgressIndicator(
-                                    progress = { emotionCount / 7f },
+                                    progress = { parsedFeed.userEmotionCount / 7f },
                                     modifier = Modifier
                                         .weight(1f)
                                         .align(Alignment.CenterVertically),
@@ -205,7 +204,7 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
                     }
                     item {
                         Text(
-                            text = content,
+                            text = parsedFeed.content,
                             style = TextStyle(fontSize = 16.sp),
                             modifier = Modifier.padding(12.dp)
                         )
@@ -242,17 +241,17 @@ fun PostDetailActivityContent(navController: NavController, feed: Feed) {
 
 @Preview(showBackground = true)
 @Composable
-fun PostDetailActivityPreview() {
+fun DetailedFeedPagePreview() {
     val navController = rememberNavController()
-    val feed = Feed(
-        feedId = 0,
+    val feed = ForumListResponse(
+        postId = 0,
         title = "Hello, Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal Jounal 0!",
         content = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
         commentCount = 0,
-        emotionType = 0,
-        emotionCount = 3,
-        writer = "박준힉",
-        timestamp = System.currentTimeMillis().toString(),
+        userEmotion = null,
+        userEmotionCount = 3,
+        username = "박준힉",
+        createDate = System.currentTimeMillis().toString(),
     )
-    PostDetailActivityContent(navController, feed)
+    DetailedFeedPage(navController, Gson().toJson(feed))
 }
