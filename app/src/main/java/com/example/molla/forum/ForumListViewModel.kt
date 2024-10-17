@@ -23,18 +23,16 @@ class ForumListViewModel : ViewModel() {
     private val _refreshNeeded = MutableLiveData(false)
     val refreshNeeded: LiveData<Boolean> get() = _refreshNeeded
 
-    fun setRefreshNeeded(value: Boolean) {
-        _refreshNeeded.value = value
-    }
-
     val isLoggedIn: Boolean
         get() = MollaApp.instance.isLoggedIn()
 
-    // `PagingData`를 직접 StateFlow로 관리
-    private val _pagingData = MutableStateFlow(createPager())
-    val pagingData: Flow<PagingData<ForumListResponse>> get() = _pagingData.value
+    // `PagingData`를 StateFlow로 관리하고 초기화된 후 재사용하도록 변경
+    private val _pagingData: Flow<PagingData<ForumListResponse>> = createPager()
+        .cachedIn(viewModelScope)
 
-    // Pager를 생성하고 Flow를 반환
+    val pagingData: Flow<PagingData<ForumListResponse>> get() = _pagingData
+
+    // Pager를 생성하고 Flow를 반환 (재사용 가능하게 설정)
     private fun createPager(): Flow<PagingData<ForumListResponse>> {
         return Pager(
             config = PagingConfig(
@@ -44,12 +42,7 @@ class ForumListViewModel : ViewModel() {
                 initialLoadSize = 20
             ),
             pagingSourceFactory = { ForumPagingSource(isLoggedIn) }
-        ).flow.cachedIn(viewModelScope)
-    }
-
-    // `refreshPagingData` 호출 시 Pager의 Flow를 다시 초기화
-    fun refreshPagingData() {
-        _pagingData.value = createPager()
+        ).flow
     }
 
     fun getEmotionType(emotion: String?): Int {

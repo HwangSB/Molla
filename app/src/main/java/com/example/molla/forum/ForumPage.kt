@@ -68,24 +68,25 @@ fun ForumPage(
     modifier: Modifier = Modifier,
     viewModel: ForumListViewModel = ForumListViewModel()
 ) {
+    // ViewModel에서 수집한 PagingData를 LazyPagingItems로 가져옴
+    val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
 
-    // `navController`의 `refreshNeeded` 상태를 `remember`로 관리
-    val refreshFlag = remember {
-        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("refreshNeeded")
-    }?.observeAsState()
+    // 새로고침 플래그가 true일 경우에만 새로고침 수행
+    val refreshNeeded = navController
+        .currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<Boolean>("refreshNeeded")
+        ?.observeAsState()
 
-    // 현재 플래그 값이 null인지 확인하고 안전하게 사용
-    val refreshNeeded = refreshFlag?.value ?: false
-
-    // 플래그가 true일 때만 새로고침을 수행하고, 플래그를 false로 변경하여 중복 요청 방지
-    LaunchedEffect(refreshNeeded) {
-        if (refreshNeeded) {
-            viewModel.refreshPagingData()
+    // refreshNeeded가 true일 경우에만 refresh 호출
+    LaunchedEffect(refreshNeeded?.value) {
+        if (refreshNeeded?.value == true) {
+            pagingData.refresh()
             navController.currentBackStackEntry?.savedStateHandle?.set("refreshNeeded", false)
         }
     }
 
-    val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
+    //val pagingData = viewModel.pagingData.collectAsLazyPagingItems()
 
     LazyColumn(
         modifier = Modifier
@@ -157,13 +158,16 @@ fun ForumPage(
 
         pagingData.apply {
             when {
-                loadState.refresh is LoadState.Loading -> {
-                    item { CircularProgressIndicator() }
+                loadState.refresh is LoadState.Loading && itemCount == 0 -> {
+                    // 초기 로딩 상태일 때 CircularProgressIndicator 표시
+                    item { CircularProgressIndicator(modifier = Modifier.fillMaxSize()) }
                 }
                 loadState.append is LoadState.Loading -> {
+                    // 추가 페이지 로딩 중
                     item { CircularProgressIndicator() }
                 }
                 loadState.append is LoadState.Error -> {
+                    // 로딩 에러 발생 시 에러 메시지 표시
                     item {
                         Text("Error: ${(loadState.append as LoadState.Error).error.message}")
                     }
