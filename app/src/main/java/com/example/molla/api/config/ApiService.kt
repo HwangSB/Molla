@@ -6,6 +6,7 @@ import com.example.molla.api.dto.request.SignUpRequest
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.LoginSuccessResponse
 import com.example.molla.api.dto.response.ForumListResponse
+import com.example.molla.api.dto.response.PostDetail
 import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import com.example.molla.api.dto.response.common.UpdateResponse
@@ -78,4 +79,7 @@ interface ApiService {
         @Query("pageNumber") pageNumber: Int,
         @Query("pageSize") pageSize: Int
     ): Response<StandardResponse<PageResponse<ForumListResponse>>>
+
+    @GET("api/post/{postId}")
+    fun getPostDetail(@Path("postId") postId: Long): Call<StandardResponse<PostDetail>>
 }

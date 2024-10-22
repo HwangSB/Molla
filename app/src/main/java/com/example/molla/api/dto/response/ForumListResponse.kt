@@ -1,6 +1,8 @@
 package com.example.molla.api.dto.response
 
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ForumListResponse(
     val postId: Long,
     val title: String,

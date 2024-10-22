@@ -42,12 +42,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.molla.R
+import com.example.molla.config.Screen
 import com.example.molla.forum.dto.Feed
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 
 @Composable
@@ -91,17 +94,21 @@ fun ForumPage(
             feedItem?.let { feed ->
                 ForumCard(
                     feed = Feed(
-                        feedId = feed.postId.toInt(),
+                        postId = feed.postId.toInt(),
                         title = feed.title,
                         content = feed.content,
                         commentCount = feed.commentCount.toInt(),
-                        emotionType = viewModel.getEmotionType(feed.userEmotion),
+                        userEmotion = feed.userEmotion,
                         emotionCount = feed.userEmotionCount.toInt(),
                         writer = feed.username,
                         timestamp = viewModel.parseDateToMonthDay(feed.createDate)
                     ),
                     onClick = {
                         // TODO
+                        Log.d("postid", feed.postId.toString())
+                        val feedJson = Json.encodeToString(feed)
+                        navController.navigate("${Screen.DetailedFeed.name}?detailFeed=${feedJson}")
+                        //navController.navigate(Screen.DetailedFeed.name)
                     }
                 )
             }
@@ -167,7 +174,7 @@ fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
             HorizontalDivider()
             CommunicationTag(
                 commentCount = feed.commentCount,
-                emotionType = feed.emotionType,
+                emotionType = 1,
                 emotionCount = feed.emotionCount,
                 writer = feed.writer,
                 timestamp = feed.timestamp
