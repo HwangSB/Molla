@@ -1,5 +1,6 @@
 package com.example.molla.api.config
 
+import com.example.molla.api.dto.request.CommentSaveRequest
 import com.example.molla.api.dto.request.ForumCreateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.request.SignUpRequest
@@ -86,6 +87,9 @@ interface ApiService {
 
     @GET("api/post/{postId}")
     fun getPostDetail(@Path("postId") postId: Long): Call<StandardResponse<PostDetail>>
+
+    @POST("/api/post/comment/save")
+    fun saveComment(@Body request: CommentSaveRequest): Call<StandardResponse<Long>>
 
     /**
      * Counsel

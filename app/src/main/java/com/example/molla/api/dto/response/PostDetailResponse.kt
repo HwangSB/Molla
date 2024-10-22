@@ -9,7 +9,7 @@ data class PostDetail(
     val userEmotion: String,
     val userEmotionCount: Long,
     val username: String,
-    val createDate: LocalDateTime,
+    val createDate: String,
     val comments: List<Comment>
 )
 
