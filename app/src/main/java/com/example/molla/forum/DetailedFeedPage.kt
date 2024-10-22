@@ -1,5 +1,9 @@
 package com.example.molla.forum
 
+import android.os.Build
+import android.util.Log
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,7 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.MollaApp
 import com.example.molla.api.dto.response.ForumListResponse
+import com.example.molla.api.dto.response.PostDetail
 import com.example.molla.common.ChatBubble
 import com.example.molla.common.ChatInputSection
 import com.example.molla.common.ChatMessageUiModel
@@ -58,49 +65,51 @@ import com.example.molla.ui.theme.MollaTheme
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.google.gson.Gson
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import androidx.lifecycle.viewmodel.compose.viewModel as viewModel1
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailedFeedPage(navController: NavController, feed: String) {
-    val chatMessageList = remember {
-        mutableStateListOf(
-            ChatMessageUiModel(
-                "댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다",
-                false,
-                "8월 8일",
-                "사용자1"
-            ),
-            ChatMessageUiModel(
-                "댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다 댓글입니다",
-                true,
-                "8월 8일",
-                "본인"
-            ),
-            ChatMessageUiModel("관종입니다.", false, "8월 8일", "사용자2"),
-            ChatMessageUiModel("이딴 글 왜 쓰는거임?", false, "8월 8일", "사용자3")
-        )
-    }
-
-    // TODO: 서버에서 받은 날짜로 파싱해야함
-    val simpleDateFormat = SimpleDateFormat("M월 d일", Locale.KOREA)
-    val listState = rememberLazyListState()
-
     val parsedFeed = Gson().fromJson(feed, ForumListResponse::class.java)
+    val postId = parsedFeed.postId
 
-    val date = parsedFeed.createDate // simpleDateFormat.format(parsedFeed.createDate)
-    val emotionColor = when (parsedFeed.userEmotion) {
-        "ANGRY" -> EmotionAngry
-        "INSECURE" -> EmotionInsecure
-        "SAD" -> EmotionSad
-        "HURT" -> EmotionHurt
-        "HAPPY" -> EmotionHappy
-        else -> Color.Gray
-    }
-
-    val scrolledTitle = if (parsedFeed.title.length >= 6) parsedFeed.title.substring(0, 6) + "…" else parsedFeed.title
+    val viewModel: FeedDetailViewModel = viewModel1()
+    var postDetail by remember { mutableStateOf<PostDetail?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var userInput by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val chatMessageList = remember { mutableStateListOf<ChatMessageUiModel>() }
     var appBarTitle by remember { mutableStateOf("") }
     val expanded = remember { mutableStateOf(false) }
-    var userInput by remember { mutableStateOf("") }
+
+    LaunchedEffect(postId) {
+        viewModel.fetchPostDetail(
+            postId = postId,
+            onSuccess = { data ->
+                postDetail = data
+                isLoading = false
+
+                // 댓글
+                chatMessageList.clear()
+                chatMessageList.addAll(data.comments.map { comment ->
+                    ChatMessageUiModel(
+                        message = comment.content,
+                        isUser = comment.username != MollaApp.instance.username,
+                        timestamp = viewModel.parseDateToMonthDay(comment.createdDate),
+                        writer = comment.username
+                    )
+                })
+            },
+            onError = { error ->
+                errorMessage = error
+                isLoading = false
+            }
+        )
+    }
 
     MollaTheme {
         Scaffold(
@@ -134,111 +143,164 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                     .fillMaxSize()
             ) {
                 LaunchedEffect(listState.firstVisibleItemScrollOffset) {
+                    val title = postDetail?.title ?: ""
+                    val scrolledTitle = if (title.length >= 6) title.substring(0, 6) + "…" else title
                     appBarTitle = if (listState.firstVisibleItemScrollOffset > 0) scrolledTitle else ""
                 }
 
-                LazyColumn (
-                    modifier = Modifier.weight(1f),
-                    state = listState
-                ) {
-                    item {
-                        Text(
-                            text = parsedFeed.title,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(12.dp)
-                        )
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
-                    item {
-                        Spacer(modifier = Modifier.padding(vertical = 8.dp))
+                }
+
+                errorMessage?.let { error ->
+                    Log.e("error", error)
+                }
+
+                if (!isLoading && errorMessage == null) {
+                    val title = postDetail?.title ?: ""
+                    val username = postDetail?.username ?: ""
+                    val content = postDetail?.content ?: ""
+                    val userEmotionCount = postDetail?.userEmotionCount ?: 0L
+                    val emotionColor = when (postDetail?.userEmotion) {
+                        "ANGRY" -> EmotionAngry
+                        "INSECURE" -> EmotionInsecure
+                        "SAD" -> EmotionSad
+                        "HURT" -> EmotionHurt
+                        "HAPPY" -> EmotionHappy
+                        else -> Color.Gray
                     }
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp)
-                        ) {
+                    val date = viewModel.parseDateToMonthDay(postDetail?.createDate.toString())
+                    LazyColumn (
+                        modifier = Modifier.weight(1f),
+                        state = listState
+                    ) {
+                        item {
                             Text(
-                                text = parsedFeed.username,
-                                style = TextStyle(
-                                    fontSize = 18.sp,
+                                text = title,
+                                style = MaterialTheme.typography.headlineSmall.copy(
                                     fontWeight = FontWeight.Bold
                                 ),
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                modifier = Modifier.padding(12.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Row (
+                        }
+                        item {
+                            Spacer(modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                        item {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier
-                                    .padding(16.dp)
-                                    .width(156.dp)
-                            ){
-                                Box(
-                                    modifier = Modifier
-                                        .width(16.dp)
-                                        .height(16.dp)
-                                        .background(emotionColor, shape = RoundedCornerShape(8.dp))
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp)
+                            ) {
+                                Text(
+                                    text = username,
+                                    style = TextStyle(
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    modifier = Modifier.padding(bottom = 4.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                LinearProgressIndicator(
-                                    progress = { parsedFeed.userEmotionCount / 7f },
+                                Row (
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .align(Alignment.CenterVertically),
-                                    color = emotionColor,
-                                    strokeCap = StrokeCap.Round,
+                                        .padding(16.dp)
+                                        .width(156.dp)
+                                ){
+                                    Box(
+                                        modifier = Modifier
+                                            .width(16.dp)
+                                            .height(16.dp)
+                                            .background(emotionColor, shape = RoundedCornerShape(8.dp))
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    LinearProgressIndicator(
+                                        progress = { userEmotionCount / 7f },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .align(Alignment.CenterVertically),
+                                        color = emotionColor,
+                                        strokeCap = StrokeCap.Round,
+                                    )
+                                }
+                            }
+                        }
+                        item {
+                            Text(
+                                text = date,
+                                style = TextStyle(
+                                    fontSize = 12.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            )
+                        }
+                        item {
+                            Text(
+                                text = content,
+                                style = TextStyle(fontSize = 16.sp),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        items(chatMessageList) { chatMessage ->
+                            ChatBubble(
+                                chatMessage = chatMessage,
+                                isPostDetail = true
+                            )
+                        }
+                    }
+
+                    LaunchedEffect(chatMessageList.size) {
+                        listState.animateScrollToItem(chatMessageList.size - 1)
+                    }
+
+                    ChatInputSection(
+                        userInput = userInput,
+                        onUserInputChange = { userInput = it },
+                        onSendMessage = {
+                            if (userInput.isNotEmpty()) {
+//                                // TODO : 서버로 채팅 입력 내용 전송
+//                                chatMessageList.add(ChatMessageUiModel(userInput, true, writer = "사용자", timestamp = "8월 8일"))
+//                                userInput = ""
+//
+//                                // TODO : 서버로 받은 응답 값(AI 상담사의 답변) 또한 리스트에 추가
+                                val currentUserId = MollaApp.instance.userId
+                                Log.d("??asdf", (username == MollaApp.instance.username).toString())
+                                Log.d("??asdfasdf", currentUserId.toString())
+                                viewModel.saveComment(
+                                    postId = postId,
+                                    content = userInput,
+                                    userId = currentUserId!!,
+                                    createDate = LocalDateTime.now().toString(),
+                                    onSuccess = { comment ->
+                                        chatMessageList.add(
+                                            ChatMessageUiModel(
+                                                message = comment.content,
+                                                isUser = username == MollaApp.instance.username,
+                                                writer = comment.username,
+                                                timestamp = viewModel.parseDateToMonthDay(LocalDateTime.now().toString())
+                                            )
+                                        )
+                                        userInput = ""
+                                    },
+                                    onError = { error ->
+                                        // 에러 처리
+                                        Log.e("댓글 전송 에러", error)
+                                    }
                                 )
                             }
                         }
-                    }
-                    item {
-                        Text(
-                            text = date,
-                            style = TextStyle(
-                                fontSize = 12.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                    }
-                    item {
-                        Text(
-                            text = parsedFeed.content,
-                            style = TextStyle(fontSize = 16.sp),
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
-                    items(chatMessageList) { chatMessage ->
-                        ChatBubble(
-                            chatMessage = chatMessage,
-                            isPostDetail = true
-                        )
-                    }
+                    )
                 }
 
-                LaunchedEffect(chatMessageList.size) {
-                    listState.animateScrollToItem(chatMessageList.size - 1)
-                }
-
-                ChatInputSection(
-                    userInput = userInput,
-                    onUserInputChange = { userInput = it },
-                    onSendMessage = {
-                        if (userInput.isNotEmpty()) {
-                            // TODO : 서버로 채팅 입력 내용 전송
-                            chatMessageList.add(ChatMessageUiModel(userInput, true, writer = "사용자", timestamp = "8월 8일"))
-                            userInput = ""
-
-                            // TODO : 서버로 받은 응답 값(AI 상담사의 답변) 또한 리스트에 추가
-                        }
-                    }
-                )
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun DetailedFeedPagePreview() {

@@ -63,10 +63,8 @@ fun WriteFeedPage(navController: NavController, viewModel: WriteForumViewModel =
                                         content = content,
                                         userId = MollaApp.instance.userId.toString(),
                                         onSuccess = {
-                                            // 이동하기 전에 `refreshNeeded` 플래그 설정
                                             navController.previousBackStackEntry?.savedStateHandle?.set("refreshNeeded", true)
 
-                                            // 게시글 목록 페이지로 이동
                                             navController.navigate("${Screen.Main.name}?actionIndex=1") {
                                                 popUpTo(0)
                                             }
