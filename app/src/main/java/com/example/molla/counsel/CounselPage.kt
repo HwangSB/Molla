@@ -1,5 +1,6 @@
 package com.example.molla.counsel
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,31 +19,55 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.molla.MollaApp
 import com.example.molla.common.ChatBubble
 import com.example.molla.common.ChatInputSection
 import com.example.molla.common.ChatMessageUiModel
 import com.example.molla.common.LabeledHorizontalDivider
 import com.example.molla.ui.theme.MollaTheme
+import com.example.molla.websocket.config.WebSocketClient
+import com.example.molla.websocket.config.WebSocketPath
+import com.example.molla.websocket.dto.request.ChatRequest
+import com.google.gson.Gson
+import okhttp3.WebSocket
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CounselPageContent(navController: NavController) {
+fun CounselPage(navController: NavController) {
+    val viewModel = CounselViewModel()
+
+    val botName = "AI 상담사"
+    val userName = "사용자"
+
     val currentDate = Calendar.getInstance().time
     val dateFormat = SimpleDateFormat("d일", Locale.getDefault())
     val dayOfMonth = dateFormat.format(currentDate) // 현재 날짜 가져옴
 
     var userInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val chatMessageList = remember {
-        mutableStateListOf(
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 등산은 잘 갔다 오셨나요?", false, writer = "AI 상담사"),
-            ChatMessageUiModel("짧은글", true, writer = "사용자"),
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
-            ChatMessageUiModel("자신의 감정을 솔직하게 털어놔 보세요. 어제 상담 상담 상담 상담 상담 상담", false, writer = "AI 상담사"),
-            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자"),
-            ChatMessageUiModel("safasfdasfsafsdafsdafsadfsafsafsafsafsdafsfsafsfsasafsafsadfsad", true, writer = "사용자")
+    val chatMessageList = remember { mutableStateListOf<ChatMessageUiModel>() }
+
+    var webSocket by remember { mutableStateOf<WebSocket?>(null) }
+
+    WebSocketClient(
+        path = WebSocketPath.CHAT,
+        onWebSocketCreated = { webSocket = it },
+        onChatMessageReceived = { chatResponse ->
+            chatMessageList.add(ChatMessageUiModel(chatResponse.content, false, writer = botName))
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        viewModel.getChatHistory(
+            onSuccess = { chatHistory ->
+                chatMessageList.clear()
+                chatMessageList.addAll(chatHistory.map {
+                    ChatMessageUiModel(it.message, !it.isBot, writer = if(it.isBot) botName else userName )
+                })
+            },
+            onError = { Log.d("CounselPage", it) }
         )
     }
 
@@ -93,7 +118,9 @@ fun CounselPageContent(navController: NavController) {
                 }
                 // 스크롤 상태에서 채팅 입력시 자동으로 하단 이동
                 LaunchedEffect(chatMessageList.size) {
-                    listState.animateScrollToItem(chatMessageList.size - 1)
+                    if (chatMessageList.size > 0) {
+                        listState.animateScrollToItem(chatMessageList.size - 1)
+                    }
                 }
 
                 Text(
@@ -111,11 +138,14 @@ fun CounselPageContent(navController: NavController) {
                     onUserInputChange = { userInput = it },
                     onSendMessage = {
                         if (userInput.isNotEmpty()) {
-                            // TODO : 서버로 채팅 입력 내용 전송
+                            val chatRequest = ChatRequest(
+                                userId = MollaApp.instance.userId ?: -1,
+                                message = userInput,
+                                isBot = false,
+                            )
+                            webSocket?.send(Gson().toJson(chatRequest))
                             chatMessageList.add(ChatMessageUiModel(userInput, true, writer = "사용자"))
                             userInput = ""
-
-                            // TODO : 서버로 받은 응답 값(AI 상담사의 답변) 또한 리스트에 추가
                         }
                     }
                 )
@@ -128,5 +158,5 @@ fun CounselPageContent(navController: NavController) {
 @Composable
 fun CounselPagePreview() {
     val navController = rememberNavController()
-    CounselPageContent(navController)
+    CounselPage(navController)
 }

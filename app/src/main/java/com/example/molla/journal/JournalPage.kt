@@ -45,7 +45,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.molla.common.DraggableBox
@@ -68,36 +67,8 @@ import kotlinx.serialization.json.Json
 
 @Composable
 fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpened: Boolean) {
+    val journalViewModel = JournalViewModel()
     var journals by rememberSaveable { mutableStateOf(listOf<DiaryResponse>()) }
-
-    journals = listOf(
-//        DiaryResponse(
-//            diaryId = 1,
-//            title = "오늘의 일기",
-//            content = "오늘은 좋은 날이었어요!",
-//            diaryEmotion = "HAPPY",
-//            createDate = "2024-07-26",
-//            images = listOf()
-//        ),
-//        DiaryResponse(
-//            diaryId = 2,
-//            title = "어제의 일기",
-//            content = "어제는 힘든 하루였어요...",
-//            diaryEmotion = "SAD",
-//            createDate = "2024-07-25",
-//            images = listOf()
-//        ),
-//        DiaryResponse(
-//            diaryId = 3,
-//            title = "저번달의 일기",
-//            content = "저번달에는 무슨 일이 있었더라...",
-//            diaryEmotion = "ANGRY",
-//            createDate = "2024-06-24",
-//            images = listOf()
-//        )
-    )
-
-    val journalViewModel: JournalViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         journalViewModel.listDiaries(

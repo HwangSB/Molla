@@ -3,6 +3,7 @@ package com.example.molla.api.config
 import com.example.molla.api.dto.request.ForumCreateRequest
 import com.example.molla.api.dto.request.LoginRequest
 import com.example.molla.api.dto.request.SignUpRequest
+import com.example.molla.websocket.dto.response.ChatHistoryResponse
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.LoginSuccessResponse
 import com.example.molla.api.dto.response.ForumListResponse
@@ -25,6 +26,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
+    /**
+     * Journal
+     */
     @Multipart
     @POST("api/diary/save")
     fun saveDiary(
@@ -82,4 +86,12 @@ interface ApiService {
 
     @GET("api/post/{postId}")
     fun getPostDetail(@Path("postId") postId: Long): Call<StandardResponse<PostDetail>>
+
+    /**
+     * Counsel
+     */
+    @GET("api/chat/history/{id}")
+    fun getChatHistory(
+        @Path("id") id: Long,
+    ): Call<StandardResponse<List<ChatHistoryResponse>>>
 }

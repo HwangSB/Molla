@@ -19,14 +19,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -42,15 +40,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.molla.R
+import com.example.molla.api.dto.response.ForumListResponse
 import com.example.molla.config.Screen
-import com.example.molla.forum.dto.Feed
 import com.example.molla.ui.theme.EmotionAngry
 import com.example.molla.ui.theme.EmotionHappy
 import com.example.molla.ui.theme.EmotionHurt
 import com.example.molla.ui.theme.EmotionInsecure
 import com.example.molla.ui.theme.EmotionSad
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import com.google.gson.Gson
 
 
 @Composable
@@ -93,22 +90,10 @@ fun ForumPage(
             val feedItem = pagingData[index]
             feedItem?.let { feed ->
                 ForumCard(
-                    feed = Feed(
-                        postId = feed.postId.toInt(),
-                        title = feed.title,
-                        content = feed.content,
-                        commentCount = feed.commentCount.toInt(),
-                        userEmotion = feed.userEmotion,
-                        emotionCount = feed.userEmotionCount.toInt(),
-                        writer = feed.username,
-                        timestamp = viewModel.parseDateToMonthDay(feed.createDate)
-                    ),
+                    feed = feed,
                     onClick = {
-                        // TODO
-                        Log.d("postid", feed.postId.toString())
-                        val feedJson = Json.encodeToString(feed)
-                        navController.navigate("${Screen.DetailedFeed.name}?detailFeed=${feedJson}")
-                        //navController.navigate(Screen.DetailedFeed.name)
+                        val feedJson = Gson().toJson(feed)
+                        navController.navigate("${Screen.DetailedFeed.name}?detailedFeedJson=${feedJson}")
                     }
                 )
             }
@@ -143,7 +128,7 @@ fun ForumPage(
 }
 
 @Composable
-fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
+fun ForumCard(feed: ForumListResponse, onClick: () -> Unit = {}) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,10 +159,10 @@ fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
             HorizontalDivider()
             CommunicationTag(
                 commentCount = feed.commentCount,
-                emotionType = 1,
-                emotionCount = feed.emotionCount,
-                writer = feed.writer,
-                timestamp = feed.timestamp
+                userEmotion = feed.userEmotion,
+                userEmotionCount = feed.userEmotionCount,
+                username = feed.username,
+                createDate = feed.createDate
             )
         }
     }
@@ -185,18 +170,18 @@ fun ForumCard(feed: Feed, onClick: () -> Unit = {}) {
 
 @Composable
 fun CommunicationTag(
-    commentCount: Int,
-    emotionType: Int,
-    emotionCount: Int,
-    writer: String,
-    timestamp: String,
+    commentCount: Long,
+    userEmotion: String?,
+    userEmotionCount: Long,
+    username: String,
+    createDate: String,
 ) {
-    val emotionColor = when (emotionType) {
-        0 -> EmotionAngry
-        1 -> EmotionInsecure
-        2 -> EmotionSad
-        3 -> EmotionHurt
-        4 -> EmotionHappy
+    val emotionColor = when (userEmotion) {
+        "ANGRY" -> EmotionAngry
+        "INSECURE" -> EmotionInsecure
+        "SAD" -> EmotionSad
+        "HURT" -> EmotionHurt
+        "HAPPY" -> EmotionHappy
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     //val simpleDateFormat = SimpleDateFormat("MM월 dd일", Locale.KOREA)
@@ -226,7 +211,7 @@ fun CommunicationTag(
         )
         Spacer(modifier = Modifier.width(8.dp))
         LinearProgressIndicator(
-            progress = { emotionCount / 7f },
+            progress = { userEmotionCount / 7f },
             strokeCap = StrokeCap.Round,
             color = emotionColor,
             modifier = Modifier
@@ -235,13 +220,13 @@ fun CommunicationTag(
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = "by $writer",
+            text = "by $username",
             style = MaterialTheme.typography.bodyMedium,
             fontSize = 12.sp
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = timestamp,
+            text = createDate,
             style = MaterialTheme.typography.bodyMedium,
             fontSize = 12.sp
         )

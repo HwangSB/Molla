@@ -53,6 +53,9 @@ import com.example.molla.config.Screen
 import com.example.molla.ui.theme.MollaTheme
 import com.example.molla.utils.convertBase64ToByteArray
 import com.example.molla.websocket.config.WebSocketClient
+import com.example.molla.websocket.config.WebSocketPath
+import com.example.molla.websocket.dto.request.EmotionAnalysisRequest
+import com.google.gson.Gson
 import kotlinx.serialization.json.Json
 import okhttp3.WebSocket
 
@@ -79,14 +82,13 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
     var navigateToAnalysis by remember { mutableStateOf(false) }
 
     WebSocketClient(
-        onWebSocketCreated = { ws ->
-            webSocket = ws
-        },
-        onMessageReceived = { response ->
+        WebSocketPath.EMOTION,
+        onWebSocketCreated = { webSocket = it },
+        onEmotionAnalysisMessageReceived = { response ->
             emotionCode = when (response.result) {
                 "ANGRY" -> 0
-                "SAD" -> 1
-                "ANXIOUS" -> 2
+                "ANXIOUS" -> 1
+                "SAD" -> 2
                 "HURT" -> 3
                 "HAPPY" -> 4
                 "NOTHING" -> 5
@@ -146,7 +148,13 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
                                         content = content,
                                         images = selectedImages,
                                         onSuccess = { diaryId ->
-                                            webSocket?.send("{\"userId\": ${MollaApp.instance.userId}, \"targetId\": \"${diaryId}\", \"content\": \"${content}\", \"domain\": \"DIARY\"}")
+                                            val emotionAnalysisRequest = EmotionAnalysisRequest(
+                                                userId = MollaApp.instance.userId ?: -1,
+                                                targetId = diaryId,
+                                                content = content,
+                                                domain = "DIARY"
+                                            )
+                                            webSocket?.send(Gson().toJson(emotionAnalysisRequest))
 //                                            navController.navigate(Screen.LoadAnalysis.name) {
 //                                                popUpTo(Screen.Main.name)
 //                                            }
