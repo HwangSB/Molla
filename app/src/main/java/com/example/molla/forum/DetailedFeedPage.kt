@@ -104,7 +104,7 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                 chatMessageList.addAll(data.comments.map { comment ->
                     ChatMessageUiModel(
                         message = comment.content,
-                        isUser = comment.username != MollaApp.instance.username,
+                        isUser = MollaApp.instance.username == comment.username,
                         timestamp = viewModel.parseDateToMonthDay(comment.createdDate),
                         writer = comment.username
                     )
@@ -276,8 +276,6 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                         onSendMessage = {
                             if (userInput.isNotEmpty()) {
                                 val currentUserId = MollaApp.instance.userId
-                                Log.d("??asdf", (username == MollaApp.instance.username).toString())
-                                Log.d("??asdfasdf", currentUserId.toString())
                                 viewModel.saveComment(
                                     postId = postId,
                                     content = userInput,
@@ -287,7 +285,7 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                                         chatMessageList.add(
                                             ChatMessageUiModel(
                                                 message = comment.content,
-                                                isUser = username == MollaApp.instance.username,
+                                                isUser = true,
                                                 writer = comment.username,
                                                 timestamp = viewModel.parseDateToMonthDay(
                                                     LocalDateTime.now().toString()
