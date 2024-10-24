@@ -87,6 +87,7 @@ fun ForumPage(
         }
 
         items(pagingData.itemCount) { index ->
+            Log.e("negative???", index.toString())
             val feedItem = pagingData[index]
             feedItem?.let { feed ->
                 ForumCard(
