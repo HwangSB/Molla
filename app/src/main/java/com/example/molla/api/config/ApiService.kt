@@ -91,6 +91,15 @@ interface ApiService {
     @POST("/api/post/comment/save")
     fun saveComment(@Body request: CommentSaveRequest): Call<StandardResponse<Long>>
 
+    @PUT("/api/post/{postId}")
+    fun updateForum(
+        @Path("postId") postId: Long,
+        @Body request: ForumCreateRequest
+    ): Call<StandardResponse<UpdateResponse>>
+
+    @DELETE("/api/post/{postId}")
+    fun deleteForum(@Path("postId") postId: Long): Call<StandardResponse<UpdateResponse>>
+
     /**
      * Counsel
      */
