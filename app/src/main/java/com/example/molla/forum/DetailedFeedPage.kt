@@ -1,5 +1,6 @@
 package com.example.molla.forum
 
+import android.app.AlertDialog
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +33,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -85,6 +89,8 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
     val chatMessageList = remember { mutableStateListOf<ChatMessageUiModel>() }
     var appBarTitle by remember { mutableStateOf("") }
     val expanded = remember { mutableStateOf(false) }
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(postId) {
         viewModel.fetchPostDetail(
@@ -130,7 +136,10 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                         DropdownMenu(
                             expanded = expanded,
                             onEditClick = { /* TODO */ },
-                            onDeleteClick = { /* TODO */ },
+                            onDeleteClick = {
+                                expanded.value = false
+                                showDeleteConfirmationDialog = true
+                            },
                             onReportClick = { /* TODO */ }
                         )
                     },
@@ -144,8 +153,10 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
             ) {
                 LaunchedEffect(listState.firstVisibleItemScrollOffset) {
                     val title = postDetail?.title ?: ""
-                    val scrolledTitle = if (title.length >= 6) title.substring(0, 6) + "…" else title
-                    appBarTitle = if (listState.firstVisibleItemScrollOffset > 0) scrolledTitle else ""
+                    val scrolledTitle =
+                        if (title.length >= 6) title.substring(0, 6) + "…" else title
+                    appBarTitle =
+                        if (listState.firstVisibleItemScrollOffset > 0) scrolledTitle else ""
                 }
 
                 if (isLoading) {
@@ -172,7 +183,7 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                         else -> Color.Gray
                     }
                     val date = viewModel.parseDateToMonthDay(postDetail?.createDate.toString())
-                    LazyColumn (
+                    LazyColumn(
                         modifier = Modifier.weight(1f),
                         state = listState
                     ) {
@@ -205,16 +216,19 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Row (
+                                Row(
                                     modifier = Modifier
                                         .padding(16.dp)
                                         .width(156.dp)
-                                ){
+                                ) {
                                     Box(
                                         modifier = Modifier
                                             .width(16.dp)
                                             .height(16.dp)
-                                            .background(emotionColor, shape = RoundedCornerShape(8.dp))
+                                            .background(
+                                                emotionColor,
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     LinearProgressIndicator(
@@ -253,7 +267,7 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                     }
 
                     LaunchedEffect(chatMessageList.size) {
-                        listState.animateScrollToItem(chatMessageList.size - 1)
+                        listState.animateScrollToItem(chatMessageList.size)
                     }
 
                     ChatInputSection(
@@ -261,11 +275,6 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                         onUserInputChange = { userInput = it },
                         onSendMessage = {
                             if (userInput.isNotEmpty()) {
-//                                // TODO : 서버로 채팅 입력 내용 전송
-//                                chatMessageList.add(ChatMessageUiModel(userInput, true, writer = "사용자", timestamp = "8월 8일"))
-//                                userInput = ""
-//
-//                                // TODO : 서버로 받은 응답 값(AI 상담사의 답변) 또한 리스트에 추가
                                 val currentUserId = MollaApp.instance.userId
                                 Log.d("??asdf", (username == MollaApp.instance.username).toString())
                                 Log.d("??asdfasdf", currentUserId.toString())
@@ -280,7 +289,9 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                                                 message = comment.content,
                                                 isUser = username == MollaApp.instance.username,
                                                 writer = comment.username,
-                                                timestamp = viewModel.parseDateToMonthDay(LocalDateTime.now().toString())
+                                                timestamp = viewModel.parseDateToMonthDay(
+                                                    LocalDateTime.now().toString()
+                                                )
                                             )
                                         )
                                         userInput = ""
@@ -293,8 +304,59 @@ fun DetailedFeedPage(navController: NavController, feed: String) {
                             }
                         }
                     )
-                }
 
+                    if (showDeleteConfirmationDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteConfirmationDialog = false },
+                            title = { Text("게시글 삭제") },
+                            text = { Text("이 게시글을 삭제하시겠습니까?") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showDeleteConfirmationDialog = false
+
+                                    val currentUserName = MollaApp.instance.username
+                                    val postWriter = postDetail?.username
+
+                                    if (currentUserName != null && currentUserName == postWriter) {
+                                        viewModel.deletePost(
+                                            postId = postId,
+                                            onSuccess = {
+                                                Toast.makeText(
+                                                    context,
+                                                    "게시글이 삭제되었습니다.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                // TODO : 게시글 목록으로 이동,,
+                                            },
+                                            onError = { error ->
+                                                Toast.makeText(
+                                                    context,
+                                                    "게시글 삭제 실패: $error",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        )
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "게시글 삭제 권한이 없습니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }) {
+                                    Text(text = "삭제")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    showDeleteConfirmationDialog = false
+                                }) {
+                                    Text("취소")
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,7 @@ import com.example.molla.api.dto.response.Comment
 import com.example.molla.api.dto.response.PostDetail
 import com.example.molla.api.dto.response.common.ErrorResponse
 import com.example.molla.api.dto.response.common.StandardResponse
+import com.example.molla.api.dto.response.common.UpdateResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -58,6 +59,42 @@ class FeedDetailViewModel : ViewModel() {
                     t: Throwable
                 ) {
                     onError(t.message ?: "Network error")
+                }
+            })
+        }
+    }
+
+    fun deletePost(postId: Long, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val retrofit = ApiClient.apiService.deleteForum(postId)
+
+        viewModelScope.launch {
+            retrofit.enqueue(object : Callback<StandardResponse<UpdateResponse>>{
+                override fun onResponse(
+                    call: Call<StandardResponse<UpdateResponse>>,
+                    response: Response<StandardResponse<UpdateResponse>>
+                ) {
+                    if (response.isSuccessful && response.body() != null) {
+                        onSuccess()
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        errorBody.let {
+                            try {
+                                val gson = Gson()
+                                val errorResponse = gson.fromJson(it, ErrorResponse::class.java)
+                                val status = errorResponse.status
+                                val errorMessage = errorResponse.message
+                                val fieldErrors = errorResponse.fieldErrors
+
+                                onError("[Status] $status - [Error Response]: $errorMessage, Fields: $fieldErrors")
+                            } catch (e: Exception) {
+                                onError("Json Parsing Error: ${e.message}")
+                            }
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<StandardResponse<UpdateResponse>>, t: Throwable) {
+                    onError(t.message ?: "Network Error")
                 }
             })
         }
