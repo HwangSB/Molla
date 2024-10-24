@@ -1,18 +1,17 @@
 package com.example.molla.journal
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import com.example.molla.MollaApp
 import com.example.molla.api.config.ApiClient
 import com.example.molla.api.dto.request.DiaryCreateRequest
-import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.common.ErrorResponse
-import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import com.example.molla.api.dto.response.common.UpdateResponse
-import com.example.molla.websocket.config.WebSocketClient
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -20,43 +19,14 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.Locale
 
-class JournalViewModel : ViewModel() {
-    fun listDiaries(
-        pageNumber: Int,
-        onSuccess: (List<DiaryResponse>) -> Unit,
-        onError: (String) -> Unit,
-    ) {
-        MollaApp.instance.userId?.let {
-            val call = ApiClient.apiService.listDiaries(it, pageNumber, 20)
-            viewModelScope.launch {
-                call.enqueue(object : Callback<StandardResponse<PageResponse<DiaryResponse>>> {
-                    override fun onResponse(
-                        call: Call<StandardResponse<PageResponse<DiaryResponse>>>,
-                        response: Response<StandardResponse<PageResponse<DiaryResponse>>>
-                    ) {
-                        if (response.isSuccessful) {
-                            response.body()?.data?.content?.let { diaries ->
-                                onSuccess(diaries)
-                            } ?: onError("No data in response")
-                            return
-                        }
+class JournalViewModel(
+    private val repository: JournalRepository = JournalRepository.getInstance()
+) : ViewModel() {
+    private val _deleteStatus = MutableStateFlow<DeleteStatus>(DeleteStatus.Idle)
 
-                        handleErrorResponse(response, onError)
-                    }
-
-                    override fun onFailure(
-                        call: Call<StandardResponse<PageResponse<DiaryResponse>>>,
-                        t: Throwable
-                    ) {
-                        onError(t.message ?: "Network Error")
-                    }
-                })
-            }
-        }
-    }
+    val journalPagingFlow = repository.getJournalPagingFlow().cachedIn(viewModelScope)
+    val deleteStatus = _deleteStatus.asStateFlow()
 
     fun writeDiary(
         title: String,
@@ -160,36 +130,21 @@ class JournalViewModel : ViewModel() {
         }
     }
 
-    fun deleteDiary(
-        diaryId: Long,
-        onSuccess: (Long) -> Unit,
-        onError: (String) -> Unit,
-    ) {
-        val call = ApiClient.apiService.deleteDiary(diaryId)
+    fun deleteDiary(diaryId: Long) {
         viewModelScope.launch {
-            call.enqueue(object : Callback<StandardResponse<Long>> {
-                override fun onResponse(
-                    call: Call<StandardResponse<Long>>,
-                    response: Response<StandardResponse<Long>>
-                ) {
-                    if (response.isSuccessful) {
-                        response.body()?.data?.let { diaryId ->
-                            onSuccess(diaryId)
-                        } ?: onError("No data in response")
-                        return
-                    }
-
-                    handleErrorResponse(response, onError)
+            _deleteStatus.value = DeleteStatus.Loading
+            repository.deleteJournal(diaryId)
+                .onSuccess {
+                    _deleteStatus.value = DeleteStatus.Success(it.id)
                 }
-
-                override fun onFailure(
-                    call: Call<StandardResponse<Long>>,
-                    t: Throwable
-                ) {
-                    onError(t.message ?: "Network Error")
+                .onFailure {
+                    _deleteStatus.value = DeleteStatus.Error(it.message ?: "Unknown Error")
                 }
-            })
         }
+    }
+
+    fun resetDeleteStatus() {
+        _deleteStatus.value = DeleteStatus.Idle
     }
 
     private fun getImageParts(name: String, images: List<Pair<String, ByteArray>>): List<MultipartBody.Part> {

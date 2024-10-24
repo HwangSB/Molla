@@ -7,6 +7,7 @@ import com.example.molla.websocket.dto.response.ChatHistoryResponse
 import com.example.molla.api.dto.response.DiaryResponse
 import com.example.molla.api.dto.response.LoginSuccessResponse
 import com.example.molla.api.dto.response.ForumListResponse
+import com.example.molla.api.dto.response.common.DeleteResponse
 import com.example.molla.api.dto.response.common.PageResponse
 import com.example.molla.api.dto.response.common.StandardResponse
 import com.example.molla.api.dto.response.common.UpdateResponse
@@ -25,6 +26,11 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
+    object PAGE_SIZE {
+        const val JOURNAL = 20
+        const val FORUM = 20
+    }
+
     /**
      * Journal
      */
@@ -42,11 +48,11 @@ interface ApiService {
     ): Call<StandardResponse<Long>>
 
     @GET("api/diary/list/{id}")
-    fun listDiaries(
+    suspend fun listDiaries(
         @Path("id") id: Long,
         @Query("pageNumber") pageNumber: Int,
         @Query("pageSize") pageSize: Int
-    ): Call<StandardResponse<PageResponse<DiaryResponse>>>
+    ): Response<StandardResponse<PageResponse<DiaryResponse>>>
 
     @Multipart
     @PUT("api/diary/{id}")
@@ -58,9 +64,9 @@ interface ApiService {
     ): Call<StandardResponse<UpdateResponse>>
 
     @DELETE("api/diary/{id}")
-    fun deleteDiary(
+    suspend fun deleteDiary(
         @Path("id") id: Long
-    ): Call<StandardResponse<Long>>
+    ): Response<StandardResponse<DeleteResponse>>
 
     /**
      * User

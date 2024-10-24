@@ -41,13 +41,13 @@ import com.example.molla.ui.theme.MollaTheme
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AnalysisPage(navController: NavController, emotion: Int) {
+fun AnalysisPage(navController: NavController, emotion: String) {
     val emotionText = when (emotion) {
-        0 -> "분노"
-        1 -> "불안"
-        2 -> "슬픔"
-        3 -> "상처"
-        4 -> "행복"
+        "ANGRY" -> "분노"
+        "ANXIOUS" -> "불안"
+        "SAD" -> "슬픔"
+        "HURT" -> "상처"
+        "HAPPY" -> "행복"
         else -> "분석 오류"
     }
 
@@ -55,21 +55,21 @@ fun AnalysisPage(navController: NavController, emotion: Int) {
         colors = listOf(
             MaterialTheme.colorScheme.surface,
             when (emotion) {
-                0 -> EmotionAngry
-                1 -> EmotionInsecure
-                2 -> EmotionSad
-                3 -> EmotionHurt
-                4 -> EmotionHappy
+                "ANGRY" -> EmotionAngry
+                "ANXIOUS" -> EmotionInsecure
+                "SAD" -> EmotionSad
+                "HURT" -> EmotionHurt
+                "HAPPY" -> EmotionHappy
                 else -> MaterialTheme.colorScheme.outlineVariant
             }
         )
     )
     val contrastColor = when (emotion) {
-        0 -> MaterialTheme.colorScheme.onPrimary
-        1 -> MaterialTheme.colorScheme.onSurface
-        2 -> MaterialTheme.colorScheme.onPrimary
-        3 -> MaterialTheme.colorScheme.onPrimary
-        4 -> MaterialTheme.colorScheme.onSurface
+        "ANGRY" -> MaterialTheme.colorScheme.onPrimary
+        "ANXIOUS" -> MaterialTheme.colorScheme.onSurface
+        "SAD" -> MaterialTheme.colorScheme.onPrimary
+        "HURT" -> MaterialTheme.colorScheme.onPrimary
+        "HAPPY" -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurface
     }
 
@@ -254,5 +254,5 @@ fun ForumEmotionBarChart(
 @Composable
 fun AnalysisPagePreview() {
     val navController = rememberNavController()
-    AnalysisPage(navController, 5)
+    AnalysisPage(navController, "")
 }

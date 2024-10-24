@@ -31,7 +31,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,15 +55,21 @@ import com.example.molla.websocket.config.WebSocketClient
 import com.example.molla.websocket.config.WebSocketPath
 import com.example.molla.websocket.dto.request.EmotionAnalysisRequest
 import com.google.gson.Gson
-import kotlinx.serialization.json.Json
 import okhttp3.WebSocket
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WriteJournalPage(navController: NavController, updateJournalJson: String? = null, journalViewModel: JournalViewModel = viewModel()) {
+fun WriteJournalPage(navController: NavController, diary: DiaryResponse? = null) {
+    val journalViewModel: JournalViewModel = viewModel()
+
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var selectedImages by remember { mutableStateOf(listOf<Pair<String, ByteArray>>()) }
+
+    var webSocket by remember { mutableStateOf<WebSocket?>(null) }
+    var analysisResult by remember { mutableStateOf("") }
+    var navigateToAnalysis by remember { mutableStateOf(false) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -77,54 +82,28 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
             }
         }
     }
-    var webSocket by remember { mutableStateOf<WebSocket?>(null) }
-    var emotionCode by remember { mutableIntStateOf(5) }
-    var navigateToAnalysis by remember { mutableStateOf(false) }
+
+    if (diary != null) {
+        title = diary.title
+        content = diary.content
+        selectedImages = diary.images.map { Pair("prev.jpg", convertBase64ToByteArray(it.base64EncodedImage)) }
+    }
 
     WebSocketClient(
         WebSocketPath.EMOTION,
         onWebSocketCreated = { webSocket = it },
         onEmotionAnalysisMessageReceived = { response ->
-            emotionCode = when (response.result) {
-                "ANGRY" -> 0
-                "ANXIOUS" -> 1
-                "SAD" -> 2
-                "HURT" -> 3
-                "HAPPY" -> 4
-                "NOTHING" -> 5
-                else -> 5
-            }
+            analysisResult = response.result
             navigateToAnalysis = true
-//            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}") {
-//                popUpTo(Screen.Main.name)
-//            }
-//            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}")
         },
     )
 
     LaunchedEffect(navigateToAnalysis) {
         if (navigateToAnalysis) {
-            navController.navigate("${Screen.Analysis.name}?analysisResult=${emotionCode}") {
+            navController.navigate("${Screen.Analysis.name}?analysisResult=${analysisResult}") {
                 popUpTo(Screen.Main.name)
             }
         }
-    }
-
-    var isEdit = false
-    var diaryId = 0L
-    var previousImageIds = emptyList<Long>()
-
-    updateJournalJson?.let { journalJson ->
-        if (journalJson == "{}") return@let
-
-        isEdit = true
-
-        val diary = Json.decodeFromString<DiaryResponse>(journalJson)
-        diaryId = diary.diaryId
-        title = diary.title
-        content = diary.content
-        selectedImages = diary.images.map { Pair("prev_image.jpg", convertBase64ToByteArray(it.base64EncodedImage)) }
-        previousImageIds = diary.images.map { it.imageId }
     }
 
     MollaTheme {
@@ -133,47 +112,36 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
                 TopAppBar(
                     title = { Text("일기 작성") },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            navController.popBackStack()
-                        }) {
+                        IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                         }
                     },
                     actions = {
                         TextButton(
                             onClick = {
-                                if (!isEdit) {
+                                if (diary == null) {
                                     journalViewModel.writeDiary(
                                         title = title,
                                         content = content,
                                         images = selectedImages,
                                         onSuccess = { diaryId ->
-                                            val emotionAnalysisRequest = EmotionAnalysisRequest(
-                                                userId = MollaApp.instance.userId ?: -1,
-                                                targetId = diaryId,
-                                                content = content,
-                                                domain = "DIARY"
-                                            )
+                                            val emotionAnalysisRequest = createEmotionAnalysisRequest(diaryId, content)
                                             webSocket?.send(Gson().toJson(emotionAnalysisRequest))
-//                                            navController.navigate(Screen.LoadAnalysis.name) {
-//                                                popUpTo(Screen.Main.name)
-//                                            }
                                         },
-                                        onError = { Log.e("WriteJournalPage:Write", it) }
+                                        onError = { Log.e("WriteJournalPage.write", it) }
                                     )
                                 } else {
                                     journalViewModel.updateDiary(
-                                        diaryId = diaryId,
+                                        diaryId = diary.diaryId,
                                         title = title,
                                         content = content,
                                         updateImages = selectedImages,
-                                        deleteImageIds = previousImageIds,
-                                        onSuccess = {
-                                            navController.navigate(Screen.LoadAnalysis.name) {
-                                                popUpTo(Screen.Main.name)
-                                            }
+                                        deleteImageIds = diary.images.map { it.imageId },
+                                        onSuccess = { diaryId ->
+                                            val emotionAnalysisRequest = createEmotionAnalysisRequest(diaryId, content)
+                                            webSocket?.send(Gson().toJson(emotionAnalysisRequest))
                                         },
-                                        onError = { Log.e("WriteJournalPage:Update", it) }
+                                        onError = { Log.e("WriteJournalPage.update", it) }
                                     )
                                 }
                             }
@@ -240,6 +208,15 @@ fun WriteJournalPage(navController: NavController, updateJournalJson: String? = 
     }
 }
 
+private fun createEmotionAnalysisRequest(diaryId: Long, content: String): EmotionAnalysisRequest {
+    return EmotionAnalysisRequest(
+        userId = MollaApp.instance.userId ?: -1,
+        targetId = diaryId,
+        content = content,
+        domain = "DIARY"
+    )
+}
+
 private fun getFileNameFromUri(uri: Uri): String {
     var name = ""
     val cursor = MollaApp.instance.contentResolver.query(uri, null, null, null, null)
@@ -258,5 +235,5 @@ private fun getFileNameFromUri(uri: Uri): String {
 @Composable
 fun WriteJournalPagePreview() {
     val navController = rememberNavController()
-    WriteJournalPage(navController)
+    WriteJournalPage(navController, null)
 }

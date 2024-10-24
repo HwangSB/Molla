@@ -1,6 +1,5 @@
 package com.example.molla.journal
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
@@ -21,17 +20,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,8 +47,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.molla.common.DraggableBox
 import com.example.molla.common.LabeledHorizontalDivider
 import com.example.molla.R
@@ -67,17 +71,23 @@ import kotlinx.serialization.json.Json
 
 @Composable
 fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpened: Boolean) {
-    val journalViewModel = JournalViewModel()
-    var journals by rememberSaveable { mutableStateOf(listOf<DiaryResponse>()) }
+    val factory = JournalViewModelFactory()
+    val viewModel: JournalViewModel = viewModel(factory = factory)
 
-    LaunchedEffect(Unit) {
-        journalViewModel.listDiaries(
-            0,
-            onSuccess = {
-                journals += it
-            },
-            onError = { Log.d("JournalPage", it) }
-        )
+    val journalPagingItems = viewModel.journalPagingFlow.collectAsLazyPagingItems()
+    val deleteStatus by viewModel.deleteStatus.collectAsState()
+
+    LaunchedEffect(deleteStatus) {
+        when (deleteStatus) {
+            is DeleteStatus.Success -> {
+                journalPagingItems.refresh()
+                viewModel.resetDeleteStatus()
+            }
+            is DeleteStatus.Error -> {
+                viewModel.resetDeleteStatus()
+            }
+            else -> {}
+        }
     }
 
     LazyColumn(
@@ -112,47 +122,39 @@ fun JournalPage(navController: NavController, modifier: Modifier, isDashboardOpe
                 }
             }
         }
-        itemsIndexed(journals) { index, journal ->
-            val parseDate = parseDateToMonthDay(journal.createDate).split(" ")
-            val year = parseDate[0]
-            val month = parseDate[1]
-            val day = parseDate[2]
+        items(
+            count = journalPagingItems.itemCount,
+            key = { index -> journalPagingItems[index]?.diaryId ?: index }
+        ) { index ->
+            journalPagingItems[index]?.let { journal ->
+                val journalDate = journal.createDate
+                val (year, month, day) = parseDateToMonthDay(journalDate).split(" ")
+                val prevMonth = if (index > 0) journalPagingItems[index - 1]?.createDate?.let {
+                    parseDateToMonthDay(it).split(" ")[1]
+                } ?: "" else ""
 
-            val previousJournal = journals.getOrNull(index - 1)
-            val parsedPreviousJournalDate = if (previousJournal != null) {
-                parseDateToMonthDay(previousJournal.createDate).split(" ")[1]
-            } else {
-                ""
-            }
-            val isDifferentMonth = parsedPreviousJournalDate != month
-
-            if (previousJournal == null || isDifferentMonth) {
-                Text(
-                    text = "${year}년 ${month}월",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            LabeledHorizontalDivider("${day}일")
-            Spacer(modifier = Modifier.height(16.dp))
-            JournalDraggableBox(
-                onEdit = {
-                    val updateJournalJson = Json.encodeToString(journal)
-                    navController.navigate("${Screen.WriteJournal.name}?updateJournalJson=$updateJournalJson")
-                },
-                onDelete = {
-                    journalViewModel.deleteDiary(
-                        journal.diaryId,
-                        onSuccess = {
-                            journals -= journal
-                        },
-                        onError = { Log.e("JournalPage", it) }
+                if (prevMonth != month) {
+                    Text(
+                        text = "${year}년 ${month}월",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
-            ) {
-                ExpandableCard(journal)
+
+                LabeledHorizontalDivider("${day}일")
+                Spacer(modifier = Modifier.height(16.dp))
+                JournalDraggableBox(
+                    onEdit = {
+                        val updateJournalJson = Json.encodeToString(journal)
+                        navController.navigate("${Screen.WriteJournal.name}?updateJournalJson=$updateJournalJson")
+                    },
+                    onDelete = {
+                        viewModel.deleteDiary(journal.diaryId)
+                    }
+                ) {
+                    ExpandableCard(journal)
+                }
             }
         }
         // Bottom padding for the last item
@@ -166,6 +168,31 @@ fun JournalDraggableBox(
     onDelete: () -> Unit,
     content: @Composable () -> Unit)
 {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("삭제 확인") },
+            text = { Text("이 일기를 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete()
+                    }
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+
     DraggableBox(
         actionSize = 128.dp,
         startAction = {
@@ -194,7 +221,7 @@ fun JournalDraggableBox(
                     .align(Alignment.Center)
                     .clip(RoundedCornerShape(84.dp))
                     .background(ActionDelete)
-                    .clickable(onClick = onDelete),
+                    .clickable(onClick = { showDeleteDialog = true }),
             ) {
                 Icon(
                     painterResource(R.drawable.delete_24px),
@@ -217,7 +244,7 @@ fun ExpandableCard(journal: DiaryResponse) {
     val emotionColor = if (journal.diaryEmotion != null) {
         when (journal.diaryEmotion) {
             "ANGRY" -> EmotionAngry
-            "INSECURE" -> EmotionInsecure
+            "ANXIOUS" -> EmotionInsecure
             "SAD" -> EmotionSad
             "HURT" -> EmotionHurt
             "HAPPY" -> EmotionHappy
